@@ -30,14 +30,17 @@
         const fov = 75;
         const nearClip = 0.1;
         const farClip = 1000;
-        const terrainWidth = 10;
-        const terrainDepth = 10;
+        const terrainWidth =90;
+        const terrainDepth = 30;
 
         var width = window.innerWidth;
         var height = window.innerHeight;
         var scene = new THREE.Scene();
+
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
-        camera.position.z = 5;
+        camera.position.x = terrainWidth/2;
+        camera.position.y = 7;
+        camera.position.z = terrainDepth*0.9;
 
         //Add renderer to DOM
         var renderer = new THREE.WebGLRenderer();
@@ -54,6 +57,10 @@
         });
 
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
+        camera.lookAt(new THREE.Vector3(terrainWidth/2, 0, 0));
+        controls.target = new THREE.Vector3(terrainWidth/2, 0, 0);
+        camera.updateProjectionMatrix();
+
 
         var geometry = new THREE.Geometry();
 
