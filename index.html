@@ -17,11 +17,17 @@
     <script src="js/OrbitControls.js"></script>
     
     <script>
+        const fov = 75;
+        const nearClip = 0.1;
+        const farClip = 1000;
+        const terrainWidth = 10;
+        const terrainHeight = 10;
+
         var width = window.innerWidth;
         var height = window.innerHeight;
         var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(75, width/height, 0.1, 1000)
-        camera.position.z=3;
+        var camera = new THREE.PerspectiveCamera(fov, width/height, nearClip, farClip)
+        camera.position.z=5;
 
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize(width, height);
@@ -38,17 +44,24 @@
 
         var controls = new THREE.OrbitControls(camera, renderer.domElement); 
 
-        var geometry = new THREE.BoxGeometry(1,1,1);
+        var geometry = new THREE.Geometry();
+
+        geometry.vertices.push(
+            new THREE.Vector3(-1, 0, 1),
+            new THREE.Vector3(-1, 0, -1),
+            new THREE.Vector3(1, 0, -1)
+        );
+
+        geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
 
         var material = new THREE.MeshBasicMaterial({color: 0xFFFFFF, wireframe: true});
-        var cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
+
+        var plane = new THREE.Mesh(geometry, material);
+        scene.add(plane);
 
 
         //game logic
         function update(){
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.005;
         }
 
         //render scenee
