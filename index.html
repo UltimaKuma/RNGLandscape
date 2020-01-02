@@ -32,6 +32,7 @@
         const farClip = 1000;
         const terrainWidth =90;
         const terrainDepth = 30;
+        const terrainMaxHeight = 2;
 
         var width = window.innerWidth;
         var height = window.innerHeight;
@@ -61,16 +62,28 @@
         controls.target = new THREE.Vector3(terrainWidth/2, 0, 0);
         camera.updateProjectionMatrix();
 
+        //initialise 2D array
+        var randomArray = new Array(terrainWidth+1);
+        for(let x = 0; x < terrainWidth+1; x++){
+            randomArray[x] = new Array(terrainDepth+1);
+        }
+
+        //input random nums
+        for (let z = 0; z < terrainDepth+1; z++) {
+            for (let x = 0; x < terrainWidth+1; x++) {
+                randomArray[x][z]=Math.random()*terrainMaxHeight;
+            }
+        }
 
         var geometry = new THREE.Geometry();
 
         for (let z = 0; z < terrainDepth; z++) {
             for (let x = 0; x < terrainWidth; x++) {
                 geometry.vertices.push(
-                    new THREE.Vector3(x, 0, z),
-                    new THREE.Vector3(x + 1, 0, z),
-                    new THREE.Vector3(x, 0, z+1),
-                    new THREE.Vector3(x+1, 0, z+1),
+                    new THREE.Vector3(x, randomArray[x][z], z),
+                    new THREE.Vector3(x + 1, randomArray[x+1][z], z),
+                    new THREE.Vector3(x, randomArray[x][z+1], z+1),
+                    new THREE.Vector3(x+1, randomArray[x+1][z+1], z+1),
                 );
 
                 let planeIndex = z*terrainWidth*4 + x*4;
