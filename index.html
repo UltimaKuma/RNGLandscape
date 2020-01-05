@@ -30,9 +30,10 @@
         const fov = 75;
         const nearClip = 0.1;
         const farClip = 1000;
-        const terrainWidth =90;
-        const terrainDepth = 30;
-        const terrainMaxHeight = 2;
+        const terrainWidth =150;
+        const terrainDepth = 50;
+        const subTerrainMaxHeight = 2;
+        const superTerrainMaxHeight = 10;
 
         var width = window.innerWidth;
         var height = window.innerHeight;
@@ -69,9 +70,15 @@
         }
 
         //input random nums
+        //terrain composed of sub and superterrain
+        //subterrain consists of random values
+        //superterrain consists of sin wave
         for (let z = 0; z < terrainDepth+1; z++) {
             for (let x = 0; x < terrainWidth+1; x++) {
-                randomArray[x][z]=Math.random()*terrainMaxHeight;
+                let subTerrain = Math.random()*subTerrainMaxHeight;
+                let superTerrain = Math.cos(2*Math.PI*x/terrainWidth)*superTerrainMaxHeight;
+                console.log(Math.PI/subTerrainMaxHeight);
+                randomArray[x][z]=subTerrain+superTerrain;
             }
         }
 
