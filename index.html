@@ -30,19 +30,19 @@
         const fov = 75;
         const nearClip = 0.1;
         const farClip = 1000;
-        const terrainWidth =150;
+        const terrainWidth = 150;
         const terrainDepth = 50;
         const subTerrainMaxHeight = 2;
-        const superTerrainMaxHeight = 10;
+        const superTerrainMaxHeight = 5;
 
         var width = window.innerWidth;
         var height = window.innerHeight;
         var scene = new THREE.Scene();
 
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
-        camera.position.x = terrainWidth/2;
+        camera.position.x = terrainWidth / 2;
         camera.position.y = 7;
-        camera.position.z = terrainDepth*0.9;
+        camera.position.z = terrainDepth * 0.9;
 
         //Add renderer to DOM
         var renderer = new THREE.WebGLRenderer();
@@ -59,26 +59,25 @@
         });
 
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        camera.lookAt(new THREE.Vector3(terrainWidth/2, 0, 0));
-        controls.target = new THREE.Vector3(terrainWidth/2, 0, 0);
+        camera.lookAt(new THREE.Vector3(terrainWidth / 2, 0, 0));
+        controls.target = new THREE.Vector3(terrainWidth / 2, 0, 0);
         camera.updateProjectionMatrix();
 
         //initialise 2D array
-        var randomArray = new Array(terrainWidth+1);
-        for(let x = 0; x < terrainWidth+1; x++){
-            randomArray[x] = new Array(terrainDepth+1);
+        var randomArray = new Array(terrainWidth + 1);
+        for (let x = 0; x < terrainWidth + 1; x++) {
+            randomArray[x] = new Array(terrainDepth + 1);
         }
 
         //input random nums
         //terrain composed of sub and superterrain
         //subterrain consists of random values
         //superterrain consists of sin wave
-        for (let z = 0; z < terrainDepth+1; z++) {
-            for (let x = 0; x < terrainWidth+1; x++) {
-                let subTerrain = Math.random()*subTerrainMaxHeight;
-                let superTerrain = Math.cos(2*Math.PI*x/terrainWidth)*superTerrainMaxHeight;
-                console.log(Math.PI/subTerrainMaxHeight);
-                randomArray[x][z]=subTerrain+superTerrain;
+        for (let z = 0; z < terrainDepth + 1; z++) {
+            for (let x = 0; x < terrainWidth + 1; x++) {
+                let subTerrain = Math.random() * subTerrainMaxHeight;
+                let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
+                randomArray[x][z] = subTerrain + superTerrain;
             }
         }
 
@@ -88,15 +87,15 @@
             for (let x = 0; x < terrainWidth; x++) {
                 geometry.vertices.push(
                     new THREE.Vector3(x, randomArray[x][z], z),
-                    new THREE.Vector3(x + 1, randomArray[x+1][z], z),
-                    new THREE.Vector3(x, randomArray[x][z+1], z+1),
-                    new THREE.Vector3(x+1, randomArray[x+1][z+1], z+1),
+                    new THREE.Vector3(x + 1, randomArray[x + 1][z], z),
+                    new THREE.Vector3(x, randomArray[x][z + 1], z + 1),
+                    new THREE.Vector3(x + 1, randomArray[x + 1][z + 1], z + 1),
                 );
 
-                let planeIndex = z*terrainWidth*4 + x*4;
+                let planeIndex = z * terrainWidth * 4 + x * 4;
                 geometry.faces.push(
-                    new THREE.Face3(planeIndex, planeIndex+1, planeIndex+2),
-                    new THREE.Face3(planeIndex+1, planeIndex+2, planeIndex+3),
+                    new THREE.Face3(planeIndex, planeIndex + 1, planeIndex + 2),
+                    new THREE.Face3(planeIndex + 1, planeIndex + 2, planeIndex + 3),
                 );
             }
         }
@@ -109,6 +108,24 @@
 
         //game logic
         function update() {
+            for (let z = 0; z < terrainDepth + 1; z++) {
+                for (let x = 0; x < terrainWidth + 1; x++) {
+                    let subTerrain = Math.random() * subTerrainMaxHeight;
+                    let superTerrain = Math.sin(Math.PI/2*Math.cos(2 * Math.PI * x / terrainWidth)) * superTerrainMaxHeight;
+                    randomArray[x][z] = subTerrain + superTerrain;
+                }
+            }
+
+            for (let z = 0; z < terrainDepth; z++) {
+                for (let x = 0; x < terrainWidth; x++) {
+                    let planeIndex = z * terrainWidth * 4 + x * 4;
+                    geometry.vertices[planeIndex].y = randomArray[x][z];
+                    geometry.vertices[planeIndex + 1].y = randomArray[x + 1][z];
+                    geometry.vertices[planeIndex + 2].y = randomArray[x][z + 1];
+                    geometry.vertices[planeIndex + 3].y = randomArray[x + 1][z + 1];
+                }
+            }
+            geometry.verticesNeedUpdate = true;
         }
 
         //render scenee
@@ -118,7 +135,9 @@
 
         //run game loop ie update render
         function gameLoop() {
-            requestAnimationFrame(gameLoop);
+            setTimeout(function () {
+                requestAnimationFrame(gameLoop);
+            }, 1000 / 30);
             update();
             render();
         }
