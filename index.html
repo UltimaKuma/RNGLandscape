@@ -86,6 +86,10 @@
 
         for (let z = 0; z < terrainDepth; z++) {
             for (let x = 0; x < terrainWidth; x++) {
+                // Creating a plane with vertices in order:
+                // 0-1
+                // |/|
+                // 2-3
                 geometry.vertices.push(
                     new THREE.Vector3(x, randomArray[x][z], z),
                     new THREE.Vector3(x + 1, randomArray[x + 1][z], z),
@@ -93,7 +97,9 @@
                     new THREE.Vector3(x + 1, randomArray[x + 1][z + 1], z + 1),
                 );
 
+                // Getting index for 0th vertex 
                 let planeIndex = z * terrainWidth * 4 + x * 4;
+                // Generating faces using vertices 0, 1, 2 and 1, 2, 3
                 geometry.faces.push(
                     new THREE.Face3(planeIndex, planeIndex + 1, planeIndex + 2),
                     new THREE.Face3(planeIndex + 1, planeIndex + 2, planeIndex + 3),
