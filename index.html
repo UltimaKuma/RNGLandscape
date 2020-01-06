@@ -143,8 +143,9 @@
 
         // Add sun to scene
         var sunGeometry = new THREE.CircleGeometry(16,32);
+        var sunTexture = new THREE.TextureLoader().load("textures/sunGradient.png");
         var sunMaterial = new THREE.MeshBasicMaterial( {
-            color: 0xffff00,
+            map: sunTexture,
             fog: false,
         } );
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
