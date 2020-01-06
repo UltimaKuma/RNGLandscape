@@ -43,7 +43,13 @@
 
         var width = window.innerWidth;
         var height = window.innerHeight;
+
         var scene = new THREE.Scene();
+
+        // Adding fog to scene
+        fogColor = new THREE.Color(0x000000);
+        scene.background = fogColor;
+        scene.fog = new THREE.Fog(fogColor, 0.0025, 40);
 
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
         camera.position.x = terrainWidth / 2;
