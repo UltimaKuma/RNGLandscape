@@ -57,17 +57,18 @@
         scene.background = fogColor;
         scene.fog = new THREE.Fog(fogColor, 0.0025, 40);
 
+        // Positionsing camera
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
         camera.position.x = terrainWidth / 2;
         camera.position.y = 3;
         camera.position.z = terrainDepth * 1.1;
 
-        //Add renderer to DOM
+        // Adding renderer to DOM
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize(width, height);
         document.body.appendChild(renderer.domElement);
 
-
+        // Handler to resize window
         window.addEventListener("resize", function () {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -76,15 +77,16 @@
             camera.updateProjectionMatrix();
         });
 
+        // Orbit controls
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
         camera.lookAt(new THREE.Vector3(terrainWidth / 2, 0, 0));
         controls.target = new THREE.Vector3(terrainWidth / 2, 0, 0);
         camera.updateProjectionMatrix();
 
-        //initialise 2D array
-        var randomArray = new Array(terrainWidth + 1);
+        //Initialise 2D array for random values
+        var terrainArray = new Array(terrainWidth + 1);
         for (let x = 0; x < terrainWidth + 1; x++) {
-            randomArray[x] = new Array(terrainDepth + 1);
+            terrainArray[x] = new Array(terrainDepth + 1);
         }
 
         // Seed simplex noise
@@ -94,14 +96,7 @@
         // Terrain composed of sub and superterrain
         // Subterrain consists of simplex noise
         // Superterrain consists of sine/cosine function to create a valley
-        for (let z = 0; z < terrainDepth + 1; z++) {
-            for (let x = 0; x < terrainWidth + 1; x++) {
-                let microTerrain = noise.simplex2((x+100) / noiseStepScale, (z+100) / noiseStepScale) * microTerrainMaxHeight;
-                let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale) * subTerrainMaxHeight;
-                let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                randomArray[x][z] = subTerrain + superTerrain + microTerrain;
-            }
-        }
+        generateTerrainHeight();
 
         var geometry = new THREE.Geometry();
 
@@ -112,10 +107,10 @@
                 // |/|
                 // 2-3
                 geometry.vertices.push(
-                    new THREE.Vector3(x, randomArray[x][z], z),
-                    new THREE.Vector3(x + 1, randomArray[x + 1][z], z),
-                    new THREE.Vector3(x, randomArray[x][z + 1], z + 1),
-                    new THREE.Vector3(x + 1, randomArray[x + 1][z + 1], z + 1),
+                    new THREE.Vector3(x, terrainArray[x][z], z),
+                    new THREE.Vector3(x + 1, terrainArray[x + 1][z], z),
+                    new THREE.Vector3(x, terrainArray[x][z + 1], z + 1),
+                    new THREE.Vector3(x + 1, terrainArray[x + 1][z + 1], z + 1),
                 );
 
                 // Getting index for 0th vertex 
@@ -147,28 +142,37 @@
         var wireframe = new THREE.LineSegments(mesh.geometry, wireframeMaterial);
         mesh.add(wireframe);
 
-        //game logic
-        function update() {
+        // Generates terrain
+        // Terrain composed of micro, sub and superterrain
+        // Microterrain and subterrain consists of simplex noise
+        // Superterrain consists of sine/cosine function to create a valley
+        function generateTerrainHeight(){
             for (let z = 0; z < terrainDepth + 1; z++) {
                 for (let x = 0; x < terrainWidth + 1; x++) {
                     let microTerrain = noise.simplex2((x+100) / (noiseStepScale/microTerrainDivisor), (z+100) / (noiseStepScale/microTerrainDivisor)+noiseOffset*microTerrainDivisor) * microTerrainMaxHeight;
                     let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
                     let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                    randomArray[x][z] = microTerrain + subTerrain + superTerrain;
+                    terrainArray[x][z] = microTerrain + subTerrain + superTerrain;
                 }
             }
+            // Next call will be offset to simulate movement
+            noiseOffset -= noiseOffsetIncrement;
+        }
+
+        // Game logic
+        function update() {
+            generateTerrainHeight();
 
             for (let z = 0; z < terrainDepth; z++) {
                 for (let x = 0; x < terrainWidth; x++) {
                     let planeIndex = z * terrainWidth * 4 + x * 4;
-                    geometry.vertices[planeIndex].y = randomArray[x][z];
-                    geometry.vertices[planeIndex + 1].y = randomArray[x + 1][z];
-                    geometry.vertices[planeIndex + 2].y = randomArray[x][z + 1];
-                    geometry.vertices[planeIndex + 3].y = randomArray[x + 1][z + 1];
+                    geometry.vertices[planeIndex].y = terrainArray[x][z];
+                    geometry.vertices[planeIndex + 1].y = terrainArray[x + 1][z];
+                    geometry.vertices[planeIndex + 2].y = terrainArray[x][z + 1];
+                    geometry.vertices[planeIndex + 3].y = terrainArray[x + 1][z + 1];
                 }
             }
             geometry.verticesNeedUpdate = true;
-            noiseOffset -= noiseOffsetIncrement;
         }
 
         //render scenee
