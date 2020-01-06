@@ -28,17 +28,23 @@
     <script src="js/perlin.js"></script>
 
     <script>
-        const fps = 20;
+        const fps = 15;
         const fov = 75;
         const nearClip = 0.1;
         const farClip = 1000;
         const terrainWidth = 80;
         const terrainDepth = 30;
-        const subTerrainMaxHeight = 2;
-        const superTerrainMaxHeight = 4;
 
-        const noiseStepScale = 5;
-        var noiseOffsetIncrement = 1 / 5;
+        // Affects height of various terrain
+        const microTerrainMaxHeight = 1;
+        const subTerrainMaxHeight = 4;
+        const superTerrainMaxHeight = 6;
+
+        // Affects roughness of microterrain
+        const microTerrainDivisor = 8;
+
+        const noiseStepScale = 15;
+        var noiseOffsetIncrement = 0.2;
         var noiseOffset = 0;
 
         var width = window.innerWidth;
@@ -90,9 +96,10 @@
         // Superterrain consists of sine/cosine function to create a valley
         for (let z = 0; z < terrainDepth + 1; z++) {
             for (let x = 0; x < terrainWidth + 1; x++) {
+                let microTerrain = noise.simplex2((x+100) / noiseStepScale, (z+100) / noiseStepScale) * microTerrainMaxHeight;
                 let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale) * subTerrainMaxHeight;
                 let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                randomArray[x][z] = subTerrain + superTerrain;
+                randomArray[x][z] = subTerrain + superTerrain + microTerrain;
             }
         }
 
@@ -145,9 +152,10 @@
         function update() {
             for (let z = 0; z < terrainDepth + 1; z++) {
                 for (let x = 0; x < terrainWidth + 1; x++) {
+                    let microTerrain = noise.simplex2((x+100) / (noiseStepScale/microTerrainDivisor), (z+100) / (noiseStepScale/microTerrainDivisor)+noiseOffset*microTerrainDivisor) * microTerrainMaxHeight;
                     let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
                     let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                    randomArray[x][z] = subTerrain + superTerrain;
+                    randomArray[x][z] = microTerrain + subTerrain + superTerrain;
                 }
             }
 
