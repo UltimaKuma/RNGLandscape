@@ -28,13 +28,18 @@
     <script src="js/perlin.js"></script>
 
     <script>
+        const fps = 20;
         const fov = 75;
         const nearClip = 0.1;
         const farClip = 1000;
-        const terrainWidth = 150;
-        const terrainDepth = 50;
+        const terrainWidth = 60;
+        const terrainDepth = 20;
         const subTerrainMaxHeight = 2;
-        const superTerrainMaxHeight = 5;
+        const superTerrainMaxHeight = 3;
+
+        const noiseStepScale = 5;
+        var noiseOffsetIncrement=1/5;
+        var noiseOffset = 0;
 
         var width = window.innerWidth;
         var height = window.innerHeight;
@@ -42,8 +47,8 @@
 
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
         camera.position.x = terrainWidth / 2;
-        camera.position.y = 7;
-        camera.position.z = terrainDepth * 0.9;
+        camera.position.y = 6;
+        camera.position.z = terrainDepth * 1.1;
 
         //Add renderer to DOM
         var renderer = new THREE.WebGLRenderer();
@@ -70,13 +75,16 @@
             randomArray[x] = new Array(terrainDepth + 1);
         }
 
-        //input random nums
-        //terrain composed of sub and superterrain
-        //subterrain consists of random values
-        //superterrain consists of sin wave
+        // Seed simplex noise
+        noise.seed(Math.random());
+
+        // Generate terrain
+        // Terrain composed of sub and superterrain
+        // Subterrain consists of simplex noise
+        // Superterrain consists of sine/cosine function to create a valley
         for (let z = 0; z < terrainDepth + 1; z++) {
             for (let x = 0; x < terrainWidth + 1; x++) {
-                let subTerrain = Math.random() * subTerrainMaxHeight;
+                let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale) * subTerrainMaxHeight;
                 let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
                 randomArray[x][z] = subTerrain + superTerrain;
             }
@@ -107,7 +115,7 @@
             }
         }
 
-        var material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, wireframe: true });
+        var material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, wireframe: true , side: THREE.DoubleSide});
 
         var plane = new THREE.Mesh(geometry, material);
         scene.add(plane);
@@ -117,8 +125,8 @@
         function update() {
             for (let z = 0; z < terrainDepth + 1; z++) {
                 for (let x = 0; x < terrainWidth + 1; x++) {
-                    let subTerrain = Math.random() * subTerrainMaxHeight;
-                    let superTerrain = Math.sin(Math.PI/2*Math.cos(2 * Math.PI * x / terrainWidth)) * superTerrainMaxHeight;
+                    let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale+noiseOffset) * subTerrainMaxHeight;
+                    let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
                     randomArray[x][z] = subTerrain + superTerrain;
                 }
             }
@@ -133,6 +141,7 @@
                 }
             }
             geometry.verticesNeedUpdate = true;
+            noiseOffset-=noiseOffsetIncrement;
         }
 
         //render scenee
@@ -144,7 +153,7 @@
         function gameLoop() {
             setTimeout(function () {
                 requestAnimationFrame(gameLoop);
-            }, 1000 / 30);
+            }, 1000 / fps);
             update();
             render();
         }
