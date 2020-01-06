@@ -32,13 +32,13 @@
         const fov = 75;
         const nearClip = 0.1;
         const farClip = 1000;
-        const terrainWidth = 60;
-        const terrainDepth = 20;
+        const terrainWidth = 80;
+        const terrainDepth = 30;
         const subTerrainMaxHeight = 2;
-        const superTerrainMaxHeight = 3;
+        const superTerrainMaxHeight = 4;
 
         const noiseStepScale = 5;
-        var noiseOffsetIncrement=1/5;
+        var noiseOffsetIncrement = 1 / 5;
         var noiseOffset = 0;
 
         var width = window.innerWidth;
@@ -47,7 +47,7 @@
 
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
         camera.position.x = terrainWidth / 2;
-        camera.position.y = 6;
+        camera.position.y = 3;
         camera.position.z = terrainDepth * 1.1;
 
         //Add renderer to DOM
@@ -115,17 +115,31 @@
             }
         }
 
-        var material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, wireframe: true , side: THREE.DoubleSide});
+        // Genrating mesh
+        var meshMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            side: THREE.DoubleSide,
+            polygonOffset: true,
+            polygonOffsetFactor: 1, // positive value pushes polygon further away
+            polygonOffsetUnits: 1
+        });
+        var mesh = new THREE.Mesh(geometry, meshMaterial);
+        scene.add(mesh);
 
-        var plane = new THREE.Mesh(geometry, material);
-        scene.add(plane);
-
+        // Generating wireframe
+        var wireframeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFFFF,
+            wireframe: true,
+            linewidth: 2,
+        });
+        var wireframe = new THREE.LineSegments(mesh.geometry, wireframeMaterial);
+        mesh.add(wireframe);
 
         //game logic
         function update() {
             for (let z = 0; z < terrainDepth + 1; z++) {
                 for (let x = 0; x < terrainWidth + 1; x++) {
-                    let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale+noiseOffset) * subTerrainMaxHeight;
+                    let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
                     let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
                     randomArray[x][z] = subTerrain + superTerrain;
                 }
@@ -141,7 +155,7 @@
                 }
             }
             geometry.verticesNeedUpdate = true;
-            noiseOffset-=noiseOffsetIncrement;
+            noiseOffset -= noiseOffsetIncrement;
         }
 
         //render scenee
