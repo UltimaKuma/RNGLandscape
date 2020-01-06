@@ -54,16 +54,16 @@
 
         // Adding fog to scene
         if(dispFog){
-            fogColor = new THREE.Color(0x000000);
+            fogColor = new THREE.Color(0xFF5C91);
             scene.background = fogColor;
-            scene.fog = new THREE.Fog(fogColor, 0.0025, 40);
+            scene.fog = new THREE.Fog(fogColor, 0.0025, 50);
         }
 
         // Positionsing camera
         var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
         camera.position.x = terrainWidth / 2;
         camera.position.y = 3;
-        camera.position.z = terrainDepth * 1.1;
+        camera.position.z = terrainDepth * 1;
 
         // Adding renderer to DOM
         var renderer = new THREE.WebGLRenderer();
@@ -124,7 +124,7 @@
 
         // Genrating mesh
         var meshMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
+            color: 0x00FFFF,
             side: THREE.DoubleSide,
             polygonOffset: true,
             polygonOffsetFactor: 1,
@@ -140,12 +140,24 @@
         });
         var wireframe = new THREE.LineSegments(mesh.geometry, wireframeMaterial);
         mesh.add(wireframe);
+        
+        // Add lighting
+        scene.add(new THREE.AmbientLight(0x303030));
+        var light1 = new THREE.DirectionalLight( 0xffffff );
+        light1.position.set(1,1,2);
+        scene.add(light1);
 
         // Add sun to scene
-        var sunGeometry = new THREE.CircleGeometry(16,32);
+        var sunGeometry = new THREE.SphereGeometry(20,32, 32);
+        // var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
         var sunTexture = new THREE.TextureLoader().load("textures/sunGradient.png");
-        var sunMaterial = new THREE.MeshBasicMaterial( {
+        sunTexture.anisotropy = renderer.getMaxAnisotropy();
+        var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
+        var sunMaterial = new THREE.MeshToonMaterial( {
             map: sunTexture,
+            alphaMap: sunAlpha,
+            transparent:true,
+            wireframe:false,
             fog: false,
         } );
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
