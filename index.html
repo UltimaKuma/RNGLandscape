@@ -133,8 +133,8 @@
             color: 0x000000,
             side: THREE.DoubleSide,
             polygonOffset: true,
-            polygonOffsetFactor: 1, // positive value pushes polygon further away
-            polygonOffsetUnits: 1
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1,
         });
         var mesh = new THREE.Mesh(geometry, meshMaterial);
         scene.add(mesh);
@@ -143,7 +143,6 @@
         var wireframeMaterial = new THREE.MeshBasicMaterial({
             color: 0xFFFFFF,
             wireframe: true,
-            linewidth: 2,
         });
         var wireframe = new THREE.LineSegments(mesh.geometry, wireframeMaterial);
         mesh.add(wireframe);
