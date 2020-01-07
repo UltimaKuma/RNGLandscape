@@ -28,6 +28,7 @@
     <script src="js/perlin.js"></script>
 
     <script>
+        // Affects display
         const fps = 15;
         const fov = 75;
         const dispFog = true;
@@ -47,6 +48,17 @@
         var noiseOffsetIncrement = 0.2;
         var noiseOffset = 0;
 
+        // Affects limits at which terrain is colored
+        const snowLimit = 5;
+        const mountainLimit = 0;
+        const grassLimit = -6;
+
+        // Affects color of terrain
+        const snowColor = 0xFFFFFF;
+        const mountainColor = 0xe6ac65;
+        const grassColor = 0x42f598;
+        const waterColor = 0x00dddd;
+
         var width = window.innerWidth;
         var height = window.innerHeight;
 
@@ -55,8 +67,8 @@
         // Adding fog to scene
         if(dispFog){
             fogColor = new THREE.Color(0xff8fb2);
+            scene.fog = new THREE.Fog(fogColor, 0.0025, 70);
             scene.background = fogColor;
-            scene.fog = new THREE.Fog(fogColor, 0.0025, 60);
         }
 
         // Positionsing camera
@@ -85,7 +97,7 @@
         controls.target = new THREE.Vector3(terrainWidth / 2, 0, 0);
         camera.updateProjectionMatrix();
 
-        //Initialise 2D array for random values
+        // Initialise 2D array for random values
         var terrainArray = new Array(terrainWidth + 1);
         for (let x = 0; x < terrainWidth + 1; x++) {
             terrainArray[x] = new Array(terrainDepth + 1);
@@ -180,18 +192,19 @@
             noiseOffset -= noiseOffsetIncrement;
         }
 
+        // Colors faces of a plane depending on the y values of vertices
         function colorTerrain(){
             geometry.faces.forEach(function(face){
                 let maxY = Math.max(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
                 let minY = Math.min(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
-                if(maxY>5){
-                    face.color.setHex(0xFFFFFF);
-                }else if(maxY<=5 && maxY>0){
-                    face.color.setHex(0xe6ac65);
-                }else if(maxY<-6){
-                    face.color.setHex(0x00dddd);
+                if(maxY>snowLimit){
+                    face.color.setHex(snowColor);
+                }else if(maxY>mountainLimit){
+                    face.color.setHex(mountainColor);
+                }else if(maxY>grassLimit){
+                    face.color.setHex(grassColor);
                 }else {
-                    face.color.setHex(0x42f598);
+                    face.color.setHex(waterColor);
                 }
             });
             geometry.colorsNeedUpdate = true;
@@ -215,12 +228,12 @@
             colorTerrain();
         }
 
-        //render scenee
+        // Render scenee
         function render() {
             renderer.render(scene, camera);
         }
 
-        //run game loop ie update render
+        // Run game loop ie update render
         function gameLoop() {
             setTimeout(function () {
                 requestAnimationFrame(gameLoop);
