@@ -162,9 +162,7 @@
         // Add sun to scene
         var sunGeometry = new THREE.SphereGeometry(16,32, 32);
         var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
-        // TODO - might delete this
         sunTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        sunTexture.minFilter = THREE.NearestFilter;
         var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
         sunAlpha.minFilter = THREE.NearestFilter;
         var sunMaterial = new THREE.MeshToonMaterial( {
