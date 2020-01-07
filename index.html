@@ -162,8 +162,11 @@
         // Add sun to scene
         var sunGeometry = new THREE.SphereGeometry(16,32, 32);
         var sunTexture = new THREE.TextureLoader().load("textures/sunGradient.png");
-        sunTexture.anisotropy = renderer.getMaxAnisotropy();
+        // TODO - might delete this
+        sunTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        sunTexture.minFilter = THREE.NearestFilter;
         var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
+        sunAlpha.minFilter = THREE.NearestFilter;
         var sunMaterial = new THREE.MeshToonMaterial( {
             map: sunTexture,
             alphaMap: sunAlpha,
@@ -193,7 +196,7 @@
         }
 
         // Colors faces of a plane depending on the y values of vertices
-        function colorTerrain(){
+        function updateTerrainColor(){
             geometry.faces.forEach(function(face){
                 let maxY = Math.max(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
                 let minY = Math.min(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
@@ -225,7 +228,7 @@
             }
             geometry.verticesNeedUpdate = true;
 
-            colorTerrain();
+            updateTerrainColor();
         }
 
         // Render scenee
