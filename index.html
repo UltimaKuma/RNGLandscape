@@ -54,6 +54,7 @@
         const grassLimit = -6;
 
         // Affects color of terrain
+        const fogColor = 0xff8fb2;
         const snowColor = 0xFFFFFF;
         const mountainColor = 0xe6ac65;
         const grassColor = 0x42f598;
@@ -66,9 +67,9 @@
 
         // Adding fog to scene
         if(dispFog){
-            fogColor = new THREE.Color(0xff8fb2);
-            scene.fog = new THREE.Fog(fogColor, 0.0025, 70);
-            scene.background = fogColor;
+            let color = new THREE.Color(fogColor);
+            scene.fog = new THREE.Fog(color, 0.0025, 70);
+            scene.background = color;
         }
 
         // Positionsing camera
