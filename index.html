@@ -143,7 +143,7 @@
         var mesh = new THREE.Mesh(geometry, meshMaterial);
         scene.add(mesh);
 
-        // Generating wireframe
+        // Generating inverse
         var inverseTerrainMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000,
             side: THREE.BackSide,
@@ -161,7 +161,7 @@
 
         // Add sun to scene
         var sunGeometry = new THREE.SphereGeometry(16,32, 32);
-        var sunTexture = new THREE.TextureLoader().load("textures/sunGradient.png");
+        var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
         // TODO - might delete this
         sunTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         sunTexture.minFilter = THREE.NearestFilter;
@@ -177,6 +177,19 @@
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
         sunMesh.position.set(40,10,-5)
         scene.add(sunMesh);
+
+        // Generating sun inverse
+        var sunInverseMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            alphaMap: sunAlpha,
+            transparent:true,
+            side: THREE.BackSide,
+            wireframe: false,
+            fog: false,
+        });
+        var inverseSunMesh = new THREE.Mesh(sunGeometry, sunInverseMaterial);
+        inverseSunMesh.scale.set(1.02, 1.02, 1.02);
+        sunMesh.add(inverseSunMesh);
 
         // Generates terrain
         // Terrain composed of micro, sub and superterrain
@@ -216,7 +229,8 @@
         // Game logic
         function update() {
             generateTerrainHeight();
-
+            
+            //TODO - place inside method
             for (let z = 0; z < terrainDepth; z++) {
                 for (let x = 0; x < terrainWidth; x++) {
                     let planeIndex = z * terrainWidth * 4 + x * 4;
