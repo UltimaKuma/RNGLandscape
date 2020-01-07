@@ -116,7 +116,7 @@
                 let planeIndex = z * terrainWidth * 4 + x * 4;
                 // Generating faces using vertices 0, 1, 2 and 1, 2, 3
                 geometry.faces.push(
-                    new THREE.Face3(planeIndex, planeIndex + 1, planeIndex + 2),
+                    new THREE.Face3(planeIndex, planeIndex + 2,  planeIndex + 1),
                     new THREE.Face3(planeIndex + 1, planeIndex + 2, planeIndex + 3),
                 );
             }
@@ -125,7 +125,7 @@
         // Genrating mesh
         var meshMaterial = new THREE.MeshBasicMaterial({
             color: 0x00FFFF,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide,
             polygonOffset: true,
             polygonOffsetFactor: 1,
             polygonOffsetUnits: 1,
@@ -134,12 +134,14 @@
         scene.add(mesh);
 
         // Generating wireframe
-        var wireframeMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFFFFF,
-            wireframe: true,
+        var inverseTerrainMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            side: THREE.BackSide,
+            wireframe: false,
         });
-        var wireframe = new THREE.LineSegments(mesh.geometry, wireframeMaterial);
-        mesh.add(wireframe);
+        var inverseTerrainMesh = new THREE.Mesh(mesh.geometry, inverseTerrainMaterial);
+        inverseTerrainMesh.position.setY(inverseTerrainMesh.position.y+0.1);
+        mesh.add(inverseTerrainMesh);
         
         // Add lighting
         scene.add(new THREE.AmbientLight(0x303030));
