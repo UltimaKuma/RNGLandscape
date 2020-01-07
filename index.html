@@ -54,9 +54,9 @@
 
         // Adding fog to scene
         if(dispFog){
-            fogColor = new THREE.Color(0xFF5C91);
+            fogColor = new THREE.Color(0xff8fb2);
             scene.background = fogColor;
-            scene.fog = new THREE.Fog(fogColor, 0.0025, 50);
+            scene.fog = new THREE.Fog(fogColor, 0.0025, 60);
         }
 
         // Positionsing camera
@@ -124,11 +124,9 @@
 
         // Genrating mesh
         var meshMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00FFFF,
+            color: 0xFFFFFF,
             side: THREE.FrontSide,
-            polygonOffset: true,
-            polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1,
+            vertexColors: THREE.FaceColors,
         });
         var mesh = new THREE.Mesh(geometry, meshMaterial);
         scene.add(mesh);
@@ -139,7 +137,7 @@
             side: THREE.BackSide,
             wireframe: false,
         });
-        var inverseTerrainMesh = new THREE.Mesh(mesh.geometry, inverseTerrainMaterial);
+        var inverseTerrainMesh = new THREE.Mesh(geometry, inverseTerrainMaterial);
         inverseTerrainMesh.position.setY(inverseTerrainMesh.position.y+0.1);
         mesh.add(inverseTerrainMesh);
         
@@ -150,8 +148,7 @@
         scene.add(light1);
 
         // Add sun to scene
-        var sunGeometry = new THREE.SphereGeometry(20,32, 32);
-        // var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
+        var sunGeometry = new THREE.SphereGeometry(16,32, 32);
         var sunTexture = new THREE.TextureLoader().load("textures/sunGradient.png");
         sunTexture.anisotropy = renderer.getMaxAnisotropy();
         var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
@@ -183,6 +180,23 @@
             noiseOffset -= noiseOffsetIncrement;
         }
 
+        function colorTerrain(){
+            geometry.faces.forEach(function(face){
+                let maxY = Math.max(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
+                let minY = Math.min(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
+                if(maxY>5){
+                    face.color.setHex(0xFFFFFF);
+                }else if(maxY<=5 && maxY>0){
+                    face.color.setHex(0xe6ac65);
+                }else if(maxY<-6){
+                    face.color.setHex(0x00dddd);
+                }else {
+                    face.color.setHex(0x42f598);
+                }
+            });
+            geometry.colorsNeedUpdate = true;
+        }
+
         // Game logic
         function update() {
             generateTerrainHeight();
@@ -197,6 +211,8 @@
                 }
             }
             geometry.verticesNeedUpdate = true;
+
+            colorTerrain();
         }
 
         //render scenee
