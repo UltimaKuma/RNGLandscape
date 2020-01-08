@@ -54,7 +54,7 @@
         const grassLimit = -6;
 
         // Affects color of terrain
-        const fogColor = 0xff8fb2;
+        const fogColor = 0xf13a36;
         const snowColor = 0xFFFFFF;
         const mountainColor = 0xe6ac65;
         const grassColor = 0x42f598;
@@ -159,7 +159,7 @@
         // Add lighting
         scene.add(new THREE.AmbientLight(0x303030));
         var light1 = new THREE.DirectionalLight( 0xffffff );
-        light1.position.set(1,1,2);
+        light1.position.set(1,1,3);
         scene.add(light1);
 
         // Add sun to scene
@@ -177,7 +177,7 @@
             shininess: 0,
         } );
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.set(40,10,-5)
+        sunMesh.position.set(40,10,-6)
         scene.add(sunMesh);
 
         // Generating sun inverse
