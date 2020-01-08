@@ -52,12 +52,14 @@
         const snowLimit = 5;
         const mountainLimit = 0;
         const grassLimit = -6;
+        const sandLimit = -7;
 
         // Affects color of terrain
         const fogColor = 0xf13a36;
         const snowColor = 0xFFFFFF;
         const mountainColor = 0xe6ac65;
         const grassColor = 0x42f598;
+        const sandColor = 0xfffcc7;
         const waterColor = 0x00dddd;
 
         var width = window.innerWidth;
@@ -205,7 +207,7 @@
                     let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
                     let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
                     terrainArray[x][z] = microTerrain + subTerrain + superTerrain;
-                    terrainArray[x][z] = (terrainArray[x][z]<=grassLimit) ? grassLimit : terrainArray[x][z];
+                    terrainArray[x][z] = (terrainArray[x][z]<=sandLimit) ? sandLimit : terrainArray[x][z];
                 }
             }
             // Next call will be offset to simulate movement
@@ -223,6 +225,8 @@
                     face.color.setHex(mountainColor);
                 }else if(maxY>grassLimit){
                     face.color.setHex(grassColor);
+                }else if(maxY>sandLimit){
+                    face.color.setHex(sandColor);
                 }else {
                     face.color.setHex(waterColor);
                 }
