@@ -142,6 +142,7 @@
             color: 0xFFFFFF,
             side: THREE.FrontSide,
             vertexColors: THREE.FaceColors,
+            shininess: 0,
         });
         var mesh = new THREE.Mesh(geometry, meshMaterial);
         scene.add(mesh);
@@ -157,9 +158,9 @@
         mesh.add(inverseTerrainMesh);
         
         // Add lighting
-        scene.add(new THREE.AmbientLight(0x303030));
+        // scene.add(new THREE.AmbientLight(0x303030));
         var light1 = new THREE.DirectionalLight( 0xffffff );
-        light1.position.set(1,1,3);
+        light1.position.set(1,1,6);
         scene.add(light1);
 
         // Add sun to scene
@@ -177,7 +178,7 @@
             shininess: 0,
         } );
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.set(40,10,-6)
+        sunMesh.position.set(40, 8,-20)
         scene.add(sunMesh);
 
         // Generating sun inverse
@@ -204,6 +205,7 @@
                     let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
                     let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
                     terrainArray[x][z] = microTerrain + subTerrain + superTerrain;
+                    terrainArray[x][z] = (terrainArray[x][z]<=grassLimit) ? grassLimit : terrainArray[x][z];
                 }
             }
             // Next call will be offset to simulate movement
@@ -243,6 +245,8 @@
                 }
             }
             geometry.verticesNeedUpdate = true;
+            geometry.computeFaceNormals();
+            geometry.computeVertexNormals();
 
             updateTerrainColor();
         }
