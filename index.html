@@ -48,7 +48,7 @@
         // Affects roughness of terrain
         const microTerrainDivisor = 8;
         const noiseStepScale = 15;
-        var noiseOffsetIncrement = 0.2;
+        var noiseOffsetIncrement = 0.1;
         var noiseOffset = 0;
 
         // Affects limits at which terrain is colored
@@ -71,7 +71,7 @@
         var scene = new THREE.Scene();
 
         // Adding fog to scene
-        if(dispFog){
+        if (dispFog) {
             let color = new THREE.Color(fogColor);
             scene.fog = new THREE.Fog(color, 0.0025, 70);
         }
@@ -106,9 +106,9 @@
         camera.updateProjectionMatrix();
 
         // Initialise 2D array for random values
-        var terrainArray = new Array(terrainWidth + 1);
-        for (let x = 0; x < terrainWidth + 1; x++) {
-            terrainArray[x] = new Array(terrainDepth + 1);
+        var terrainArray = new Array(terrainDepth + 1);
+        for (let z = 0; z < terrainDepth + 1; z++) {
+            terrainArray[z] = new Array(terrainWidth + 1);
         }
 
         // Seed simplex noise
@@ -126,17 +126,17 @@
                 // |/|
                 // 2-3
                 geometry.vertices.push(
-                    new THREE.Vector3(x, terrainArray[x][z], z),
-                    new THREE.Vector3(x + 1, terrainArray[x + 1][z], z),
-                    new THREE.Vector3(x, terrainArray[x][z + 1], z + 1),
-                    new THREE.Vector3(x + 1, terrainArray[x + 1][z + 1], z + 1),
+                    new THREE.Vector3(x, terrainArray[z][x], z),
+                    new THREE.Vector3(x + 1, terrainArray[z][x + 1], z),
+                    new THREE.Vector3(x, terrainArray[z + 1][x], z + 1),
+                    new THREE.Vector3(x + 1, terrainArray[z + 1][x + 1], z + 1),
                 );
 
                 // Getting index for 0th vertex 
                 let planeIndex = z * terrainWidth * 4 + x * 4;
                 // Generating faces using vertices 0, 1, 2 and 1, 2, 3
                 geometry.faces.push(
-                    new THREE.Face3(planeIndex, planeIndex + 2,  planeIndex + 1),
+                    new THREE.Face3(planeIndex, planeIndex + 2, planeIndex + 1),
                     new THREE.Face3(planeIndex + 1, planeIndex + 2, planeIndex + 3),
                 );
             }
@@ -159,38 +159,38 @@
             wireframe: false,
         });
         var inverseTerrainMesh = new THREE.Mesh(geometry, inverseTerrainMaterial);
-        inverseTerrainMesh.position.setY(inverseTerrainMesh.position.y+0.1);
+        inverseTerrainMesh.position.setY(inverseTerrainMesh.position.y + 0.1);
         mesh.add(inverseTerrainMesh);
-        
+
         // Add lighting
         // scene.add(new THREE.AmbientLight(0x303030));
-        var light1 = new THREE.DirectionalLight( 0xffffff );
-        light1.position.set(1,1,6);
+        var light1 = new THREE.DirectionalLight(0xffffff);
+        light1.position.set(1, 1, 6);
         scene.add(light1);
 
         // Add sun to scene
-        var sunGeometry = new THREE.SphereGeometry(16,32, 32);
+        var sunGeometry = new THREE.SphereGeometry(16, 32, 32);
         var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
         sunTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
         sunAlpha.minFilter = THREE.NearestFilter;
-        var sunMaterial = new THREE.MeshToonMaterial( {
+        var sunMaterial = new THREE.MeshToonMaterial({
             map: sunTexture,
             alphaMap: sunAlpha,
-            transparent:true,
-            wireframe:false,
+            transparent: true,
+            wireframe: false,
             fog: false,
             shininess: 0,
-        } );
+        });
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.set(40, 8,-20)
+        sunMesh.position.set(40, 8, -20)
         scene.add(sunMesh);
 
         // Generating sun inverse
         var sunInverseMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000,
             alphaMap: sunAlpha,
-            transparent:true,
+            transparent: true,
             side: THREE.BackSide,
             wireframe: false,
             fog: false,
@@ -203,34 +203,49 @@
         // Terrain composed of micro, sub and superterrain
         // Microterrain and subterrain consists of simplex noise
         // Superterrain consists of sine/cosine function to create a valley
-        function generateTerrainHeight(){
+        function generateTerrainHeight() {
             for (let z = 0; z < terrainDepth + 1; z++) {
                 for (let x = 0; x < terrainWidth + 1; x++) {
-                    let microTerrain = noise.simplex2((x+100) / (noiseStepScale/microTerrainDivisor), (z+100) / (noiseStepScale/microTerrainDivisor)+noiseOffset*microTerrainDivisor) * microTerrainMaxHeight;
+                    let microTerrain = noise.simplex2((x + 100) / (noiseStepScale / microTerrainDivisor), (z + 100) / (noiseStepScale / microTerrainDivisor) + noiseOffset * microTerrainDivisor) * microTerrainMaxHeight;
                     let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
                     let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                    terrainArray[x][z] = microTerrain + subTerrain + superTerrain;
-                    terrainArray[x][z] = (terrainArray[x][z]<=sandLimit) ? sandLimit : terrainArray[x][z];
+                    terrainArray[z][x] = microTerrain + subTerrain + superTerrain;
+                    terrainArray[z][x] = (terrainArray[z][x] <= sandLimit) ? sandLimit : terrainArray[z][x];
                 }
             }
             // Next call will be offset to simulate movement
             noiseOffset -= noiseOffsetIncrement;
         }
 
+        function stepTerrainHeight() {
+            let z=0;
+            let nextTerrainArray = new Array();
+            terrainArray.pop();
+            for (let x = 0; x < terrainWidth + 1; x++) {
+                let microTerrain = noise.simplex2((x + 100) / (noiseStepScale / microTerrainDivisor), (z + 100) / (noiseStepScale / microTerrainDivisor) + noiseOffset * microTerrainDivisor) * microTerrainMaxHeight;
+                let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
+                let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
+                nextTerrainArray[x] = microTerrain + subTerrain + superTerrain;
+                nextTerrainArray[x] = (nextTerrainArray[x] <= sandLimit) ? sandLimit : nextTerrainArray[x];
+            }
+            terrainArray.unshift(nextTerrainArray);
+            noiseOffset -= noiseOffsetIncrement;
+        }
+
         // Colors faces of a plane depending on the y values of vertices
-        function updateTerrainColor(){
-            geometry.faces.forEach(function(face){
+        function updateTerrainColor() {
+            geometry.faces.forEach(function (face) {
                 let maxY = Math.max(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
                 let minY = Math.min(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
-                if(maxY>snowLimit){
+                if (maxY > snowLimit) {
                     face.color.setHex(snowColor);
-                }else if(maxY>mountainLimit){
+                } else if (maxY > mountainLimit) {
                     face.color.setHex(mountainColor);
-                }else if(maxY>grassLimit){
+                } else if (maxY > grassLimit) {
                     face.color.setHex(grassColor);
-                }else if(maxY>sandLimit){
+                } else if (maxY > sandLimit) {
                     face.color.setHex(sandColor);
-                }else {
+                } else {
                     face.color.setHex(waterColor);
                 }
             });
@@ -243,19 +258,19 @@
 
             //TODO - move terrain by step
             mesh.position.z += terrainStep;
-            if(mesh.position.z>=3){
+            if (mesh.position.z >= 1) {
                 mesh.position.z = 0;
-                generateTerrainHeight();
+                stepTerrainHeight();
             }
-            
+
             //TODO - place inside method
             for (let z = 0; z < terrainDepth; z++) {
                 for (let x = 0; x < terrainWidth; x++) {
                     let planeIndex = z * terrainWidth * 4 + x * 4;
-                    geometry.vertices[planeIndex].y = terrainArray[x][z];
-                    geometry.vertices[planeIndex + 1].y = terrainArray[x + 1][z];
-                    geometry.vertices[planeIndex + 2].y = terrainArray[x][z + 1];
-                    geometry.vertices[planeIndex + 3].y = terrainArray[x + 1][z + 1];
+                    geometry.vertices[planeIndex].y = terrainArray[z][x];
+                    geometry.vertices[planeIndex + 1].y = terrainArray[z][x + 1];
+                    geometry.vertices[planeIndex + 2].y = terrainArray[z + 1][x];
+                    geometry.vertices[planeIndex + 3].y = terrainArray[z + 1][x + 1];
                 }
             }
             geometry.verticesNeedUpdate = true;
