@@ -29,13 +29,16 @@
 
     <script>
         // Affects display
-        const fps = 15;
+        const fps = 60;
         const fov = 75;
         const dispFog = true;
-        const nearClip = 0.1;
+        const nearClip = 1;
         const farClip = 1000;
+
+        // Affects terrain
         const terrainWidth = 80;
         const terrainDepth = 60;
+        const terrainStep = 0.6;
 
         // Affects height of various terrain
         const microTerrainMaxHeight = 1;
@@ -236,7 +239,14 @@
 
         // Game logic
         function update() {
-            generateTerrainHeight();
+            // generateTerrainHeight();
+
+            //TODO - move terrain by step
+            mesh.position.z += terrainStep;
+            if(mesh.position.z>=3){
+                mesh.position.z = 0;
+                generateTerrainHeight();
+            }
             
             //TODO - place inside method
             for (let z = 0; z < terrainDepth; z++) {
