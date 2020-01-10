@@ -46,9 +46,9 @@
         const superTerrainMaxHeight = 6;
 
         // Affects roughness of terrain
-        const microTerrainDivisor = 8;
-        const noiseStepScale = 15;
-        var noiseOffsetIncrement = 0.1;
+        const microTerrainDivisor = 5;
+        const noiseStepScale = 20;
+        var noiseOffsetIncrement = 1 / noiseStepScale;
         var noiseOffset = 0;
 
         // Affects limits at which terrain is colored
@@ -218,7 +218,7 @@
         }
 
         function stepTerrainHeight() {
-            let z=0;
+            let z = 0;
             let nextTerrainArray = new Array();
             terrainArray.pop();
             for (let x = 0; x < terrainWidth + 1; x++) {
@@ -254,11 +254,11 @@
 
         // Game logic
         function update() {
-            // generateTerrainHeight();
 
             //TODO - move terrain by step
             mesh.position.z += terrainStep;
             if (mesh.position.z >= 1) {
+                //reset etep and render next chunk
                 mesh.position.z = 0;
                 stepTerrainHeight();
             }
