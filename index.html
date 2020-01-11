@@ -29,12 +29,12 @@
 
     <script>
         // Affects display
-        var fps = 60;
         const fov = 75;
         const dispFog = true;
         const nearClip = 1;
         const farClip = 1000;
         const orbitControls = false;
+        var fps = 60;
 
         // Affects terrain
         const terrainWidth = 80;
@@ -66,13 +66,23 @@
         const sandColor = 0xfffcc7;
         const waterColor = 0x00dddd;
 
+        // Affects properties of sun
+        var maxSunScale = 5;
+
         // WallpaperEngine properties
-        // ie fps slider in settings etc
         window.wallpaperPropertyListener = {
+            // General Properties ie fps slider in settings etc
             applyGeneralProperties: function (properties) {
                 if (properties.fps) {
                     fps = properties.fps;
                     terrainStep = 0.6 * 60 / fps
+                }
+            },
+
+            // User Properties
+            applyUserProperties: function (properties) {
+                if (properties.audioResponsiveness) {
+                    maxSunScale = properties.audioResponsiveness.value;
                 }
             }
         };
@@ -221,15 +231,13 @@
 
         // Handles audio responsiveness
         function handleWallpaperAudio(audioArray) {
-            let maxScale = 5;
-            let minScale = 1;
-            let scaleDiff = maxScale - minScale;
+            let scaleDiff = maxSunScale - 1;
             let total = 0;
             for (let i = 0; i < audioArray.length; i++) {
                 total += audioArray[i];
             }
             let avg = total / audioArray.length;
-            let sunScale = (scaleDiff * avg / scaleDiff) + minScale;
+            let sunScale = (scaleDiff * avg) + 1;
 
             sunMesh.scale.set(sunScale, sunScale, sunScale);
         }

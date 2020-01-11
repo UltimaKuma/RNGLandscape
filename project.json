@@ -6,7 +6,15 @@
 				"order": 0,
 				"text": "ui_browse_properties_scheme_color",
 				"type": "color",
-				"value": "0 0 0"
+				"value": "255 0 0"
+			},
+			"audioResponsiveness": {
+				"text": "Audio responsiveness",
+				"type": "slider",
+				"value": 5,
+				"min": 1,
+				"max": 20,
+				"editable": true
 			}
 		},
 		"supportsaudioprocessing": true
