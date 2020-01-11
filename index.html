@@ -29,7 +29,7 @@
 
     <script>
         // Affects display
-        const fps = 60;
+        var fps = 60;
         const fov = 75;
         const dispFog = true;
         const nearClip = 1;
@@ -39,7 +39,7 @@
         // Affects terrain
         const terrainWidth = 80;
         const terrainDepth = 60;
-        const terrainStep = 0.6;
+        var terrainStep = 0.6 * 60 / fps;
 
         // Affects height of various terrain
         const microTerrainMaxHeight = 1;
@@ -66,6 +66,19 @@
         const sandColor = 0xfffcc7;
         const waterColor = 0x00dddd;
 
+        // WallpaperEngine properties
+        // ie fps slider in settings etc
+        window.wallpaperPropertyListener = {
+            applyGeneralProperties: function (properties) {
+                if (properties.fps) {
+                    fps = properties.fps;
+                    terrainStep = 0.6 * 60 / fps
+                }
+            }
+        };
+
+
+        // Window init size
         var width = window.innerWidth;
         var height = window.innerHeight;
 
