@@ -34,6 +34,7 @@
         const dispFog = true;
         const nearClip = 1;
         const farClip = 1000;
+        const orbitControls = false;
 
         // Affects terrain
         const terrainWidth = 80;
@@ -100,10 +101,12 @@
         });
 
         // Orbit controls
-        var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        camera.lookAt(new THREE.Vector3(terrainWidth / 2, 0, 0));
-        controls.target = new THREE.Vector3(terrainWidth / 2, 0, 0);
-        camera.updateProjectionMatrix();
+        if (orbitControls) {
+            var controls = new THREE.OrbitControls(camera, renderer.domElement);
+            camera.lookAt(new THREE.Vector3(terrainWidth / 2, 0, 0));
+            controls.target = new THREE.Vector3(terrainWidth / 2, 0, 0);
+            camera.updateProjectionMatrix();
+        }
 
         // Initialise 2D array for random values
         var terrainArray = new Array(terrainDepth + 1);
@@ -198,6 +201,25 @@
         var inverseSunMesh = new THREE.Mesh(sunGeometry, sunInverseMaterial);
         inverseSunMesh.scale.set(1.02, 1.02, 1.02);
         sunMesh.add(inverseSunMesh);
+
+        window.onload = function () {
+            window.wallpaperRegisterAudioListener(handleWallpaperAudio);
+        };
+
+        // Handles audio responsiveness
+        function handleWallpaperAudio(audioArray) {
+            let maxScale = 5;
+            let minScale = 1;
+            let scaleDiff = maxScale - minScale;
+            let total = 0;
+            for (let i = 0; i < audioArray.length; i++) {
+                total += audioArray[i];
+            }
+            let avg = total / audioArray.length;
+            let sunScale = (scaleDiff * avg / scaleDiff) + minScale;
+
+            sunMesh.scale.set(sunScale, sunScale, sunScale);
+        }
 
         // Generates terrain
         // Terrain composed of micro, sub and superterrain
