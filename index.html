@@ -38,7 +38,7 @@
 
         // Affects terrain
         const terrainWidth = 80;
-        const terrainDepth = 60;
+        const terrainDepth = 100;
         var terrainStep = 0.6 * 60 / fps;
 
         // Affects height of various terrain
@@ -59,12 +59,12 @@
         const sandLimit = -7;
 
         // Affects color of terrain
-        const fogColor = 0xf13a36;
+        const fogColor = 0xaed4fa;
         const snowColor = 0xFFFFFF;
-        const mountainColor = 0xe6ac65;
-        const grassColor = 0x42f598;
-        const sandColor = 0xfffcc7;
-        const waterColor = 0x00dddd;
+        const mountainColor = 0x292f42;
+        const grassColor = 0x9bb2e0;
+        const sandColor = 0x37393d;
+        const waterColor = 0x6d98e8;
 
         // Affects properties of sun
         var maxSunScale = 5;
@@ -75,7 +75,6 @@
             applyGeneralProperties: function (properties) {
                 if (properties.fps) {
                     fps = properties.fps;
-                    terrainStep = 0.6 * 60 / fps
                 }
             },
 
@@ -83,6 +82,9 @@
             applyUserProperties: function (properties) {
                 if (properties.audioResponsiveness) {
                     maxSunScale = properties.audioResponsiveness.value;
+                }
+                if (properties.velocity) {
+                    terrainStep = (0.6 * 60 / fps) * properties.velocity.value / 10;
                 }
             }
         };
@@ -97,7 +99,7 @@
         // Adding fog to scene
         if (dispFog) {
             let color = new THREE.Color(fogColor);
-            scene.fog = new THREE.Fog(color, 0.0025, 70);
+            scene.fog = new THREE.Fog(color, 0.0025, 100);
         }
 
         // TODO - Applying texture to background (needs to be changed)
@@ -182,6 +184,7 @@
         var inverseTerrainMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000,
             side: THREE.BackSide,
+            fog: false,
             wireframe: false,
         });
         var inverseTerrainMesh = new THREE.Mesh(geometry, inverseTerrainMaterial);
@@ -195,7 +198,7 @@
         scene.add(light1);
 
         // Add sun to scene
-        var sunGeometry = new THREE.SphereGeometry(16, 32, 32);
+        var sunGeometry = new THREE.SphereGeometry(24, 32, 32);
         var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
         sunTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
@@ -209,7 +212,7 @@
             shininess: 0,
         });
         var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.set(40, 8, -20)
+        sunMesh.position.set(40, 12, -12)
         scene.add(sunMesh);
 
         // Generating sun inverse
