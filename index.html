@@ -59,12 +59,14 @@
         const sandLimit = -7;
 
         // Affects color of terrain
-        const fogColor = 0xaed4fa;
-        const snowColor = 0xFFFFFF;
-        const mountainColor = 0x292f42;
-        const grassColor = 0x9bb2e0;
-        const sandColor = 0x37393d;
-        const waterColor = 0x6d98e8;
+        var fogColor = 0xaed4fa;
+        var snowColor = 0xFFFFFF;
+        var mountainColor = 0x292f42;
+        var grassColor = 0x9bb2e0;
+        var sandColor = 0x37393d;
+        var waterColor = 0x6d98e8;
+        //TODO - Make sun a constant color
+        var sunColor = 0xff2025;
 
         // Affects properties of sun
         var maxSunScale = 5;
@@ -83,8 +85,27 @@
                 if (properties.audioResponsiveness) {
                     maxSunScale = properties.audioResponsiveness.value;
                 }
-                if (properties.velocity) {
-                    terrainStep = (0.6 * 60 / fps) * properties.velocity.value / 10;
+                if (properties.fogColor) {
+                    fogColor = rgbToHex(properties.fogColor.value);
+                }
+                if (properties.snowColor) {
+                    snowColor = rgbToHex(properties.snowColor.value);
+                }
+                if (properties.mountainColor) {
+                    mountainColor = rgbToHex(properties.mountainColor.value);
+                }
+                if (properties.grassColor) {
+                    grassColor = rgbToHex(properties.grassColor.value);
+                }
+                if (properties.sandColor) {
+                    sandColor = rgbToHex(properties.sandColor.value);
+                }
+                if (properties.waterColor) {
+                    waterColor = rgbToHex(properties.waterColor.value);
+                }
+                if (properties.sunColor) {
+                    sunColor = rgbToHex(properties.sunColor.value);
+                    sunMesh.material.color.setHex(sunColor);
                 }
             }
         };
@@ -199,12 +220,10 @@
 
         // Add sun to scene
         var sunGeometry = new THREE.SphereGeometry(24, 32, 32);
-        var sunTexture = new THREE.TextureLoader().load("textures/sunTexture.png");
-        sunTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
         sunAlpha.minFilter = THREE.NearestFilter;
         var sunMaterial = new THREE.MeshToonMaterial({
-            map: sunTexture,
+            color: sunColor,
             alphaMap: sunAlpha,
             transparent: true,
             wireframe: false,
@@ -225,12 +244,23 @@
             fog: false,
         });
         var inverseSunMesh = new THREE.Mesh(sunGeometry, sunInverseMaterial);
-        inverseSunMesh.scale.set(1.02, 1.02, 1.02);
+        inverseSunMesh.scale.set(1.01, 1.01, 1.01);
         sunMesh.add(inverseSunMesh);
 
+        // Adding audio handler as listener
         window.onload = function () {
             window.wallpaperRegisterAudioListener(handleWallpaperAudio);
         };
+
+        // Converts from rgb string to hex number value
+        function rgbToHex(rgb) {
+            let rgbArray = rgb.split(" ");
+            let r = Math.floor(parseFloat(rgbArray[0]) * 255);
+            let g = Math.floor(parseFloat(rgbArray[1]) * 255);
+            let b = Math.floor(parseFloat(rgbArray[2]) * 255);
+            let hex = r * 256 * 256 + g * 256 + b;
+            return hex;
+        }
 
         // Handles audio responsiveness
         function handleWallpaperAudio(audioArray) {
