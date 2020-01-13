@@ -39,7 +39,7 @@
         // Affects terrain
         const terrainWidth = 80;
         const terrainDepth = 100;
-        var terrainStep = 0.6 * 60 / fps;
+        var terrainStep = 0.6;
 
         // Affects height of various terrain
         const microTerrainMaxHeight = 1;
@@ -65,7 +65,6 @@
         var grassColor = 0x9bb2e0;
         var sandColor = 0x37393d;
         var waterColor = 0x6d98e8;
-        //TODO - Make sun a constant color
         var sunColor = 0xff2025;
 
         // Affects properties of sun
@@ -106,6 +105,20 @@
                 if (properties.sunColor) {
                     sunColor = rgbToHex(properties.sunColor.value);
                     sunMesh.material.color.setHex(sunColor);
+                }
+                if (properties.velocity) {
+                    terrainStep = properties.velocity.value / 10;
+                }
+                if (properties.backgroundImage) {
+                    let imagePath;
+                    if (properties.backgroundImage.value) {
+                        // Create a valid location path
+                        imagePath = "file:///" + properties.backgroundImage.value;
+                    } else {
+                        // Reset image when null
+                        imagePath = "textures/backgroundTexture.png";
+                    }
+                    scene.background = new THREE.TextureLoader().load(imagePath);
                 }
             }
         };

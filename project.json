@@ -59,6 +59,11 @@
 				"min": 0,
 				"max": 10,
 				"editable": true
+			},
+			"backgroundImage": {
+				"text": "Background image",
+				"type": "file",
+				"fileType": "image"
 			}
 		},
 		"supportsaudioprocessing": true
