@@ -28,241 +28,220 @@
     <script src="js/perlin.js"></script>
 
     <script>
+        var scene;
+        var renderer;
+        var camera;
+        var terrainModel;
+        var sunModel;
+
         // Affects display
         const fov = 75;
         const dispFog = true;
-        const nearClip = 1;
-        const farClip = 1000;
         const orbitControls = false;
         var fps = 60;
-
-        // Affects terrain
-        const terrainWidth = 80;
-        const terrainDepth = 100;
-        var terrainStep = 0.6;
-
-        // Affects height of various terrain
-        const microTerrainMaxHeight = 1;
-        const subTerrainMaxHeight = 4;
-        const superTerrainMaxHeight = 6;
-
-        // Affects roughness of terrain
-        const microTerrainDivisor = 5;
-        const noiseStepScale = 20;
-        var noiseOffsetIncrement = 1 / noiseStepScale;
-        var noiseOffset = 0;
-
-        // Affects limits at which terrain is colored
-        const snowLimit = 5;
-        const mountainLimit = 0;
-        const grassLimit = -6;
-        const sandLimit = -7;
-
-        // Affects color of terrain
-        var fogColor = 0xaed4fa;
-        var snowColor = 0xFFFFFF;
-        var mountainColor = 0x292f42;
-        var grassColor = 0x9bb2e0;
-        var sandColor = 0x37393d;
-        var waterColor = 0x6d98e8;
-        var sunColor = 0xff2025;
-
-        // Affects properties of sun
-        var maxSunScale = 5;
-
-        // WallpaperEngine properties
-        window.wallpaperPropertyListener = {
-            // General Properties ie fps slider in settings etc
-            applyGeneralProperties: function (properties) {
-                if (properties.fps) {
-                    fps = properties.fps;
-                }
-            },
-
-            // User Properties
-            applyUserProperties: function (properties) {
-                if (properties.audioResponsiveness) {
-                    maxSunScale = properties.audioResponsiveness.value;
-                }
-                if (properties.fogColor) {
-                    fogColor = rgbToHex(properties.fogColor.value);
-                }
-                if (properties.snowColor) {
-                    snowColor = rgbToHex(properties.snowColor.value);
-                }
-                if (properties.mountainColor) {
-                    mountainColor = rgbToHex(properties.mountainColor.value);
-                }
-                if (properties.grassColor) {
-                    grassColor = rgbToHex(properties.grassColor.value);
-                }
-                if (properties.sandColor) {
-                    sandColor = rgbToHex(properties.sandColor.value);
-                }
-                if (properties.waterColor) {
-                    waterColor = rgbToHex(properties.waterColor.value);
-                }
-                if (properties.sunColor) {
-                    sunColor = rgbToHex(properties.sunColor.value);
-                    sunMesh.material.color.setHex(sunColor);
-                }
-                if (properties.velocity) {
-                    terrainStep = properties.velocity.value / 10;
-                }
-                if (properties.backgroundImage) {
-                    let imagePath;
-                    if (properties.backgroundImage.value) {
-                        // Create a valid location path
-                        imagePath = "file:///" + properties.backgroundImage.value;
-                    } else {
-                        // Reset image when null
-                        imagePath = "textures/backgroundTexture.png";
-                    }
-                    scene.background = new THREE.TextureLoader().load(imagePath);
-                }
-            }
-        };
-
 
         // Window init size
         var width = window.innerWidth;
         var height = window.innerHeight;
 
-        var scene = new THREE.Scene();
+        class TerrainRandomiser {
+            constructor(terrainWidth, terrainDepth, minHeight) {
+                this.width = terrainWidth;
+                this.depth = terrainDepth;
+                this.minHeight = minHeight;
+                // Affects height of various terrain
+                this.microTerrainMaxHeight = 1;
+                this.subTerrainMaxHeight = 4;
+                this.superTerrainMaxHeight = 6;
+                // Affects roughness of terrain
+                this.microTerrainDivisor = 5;
+                this.noiseStepScale = 20;
+                this.noiseOffsetIncrement = 1 / this.noiseStepScale;
+                this.noiseOffset = 0;
+                // Initialise 2D array for random values
+                this.terrainArray = new Array(this.depth + 1);
+                for (let z = 0; z < this.depth + 1; z++) {
+                    this.terrainArray[z] = new Array(this.width + 1);
+                }
 
-        // Adding fog to scene
-        if (dispFog) {
-            let color = new THREE.Color(fogColor);
-            scene.fog = new THREE.Fog(color, 0.0025, 100);
-        }
+                // Seed simplex noise
+                noise.seed(Math.random());
 
-        // TODO - Applying texture to background (needs to be changed)
-        scene.background = new THREE.TextureLoader().load("textures/backgroundTexture.png")
+                // Generates terrain
+                // Terrain composed of micro, sub and superterrain
+                // Microterrain and subterrain consists of simplex noise
+                // Superterrain consists of sine/cosine function to create a valley
+                for (let z = 0; z < this.depth + 1; z++) {
+                    for (let x = 0; x < this.width + 1; x++) {
+                        let microTerrain = noise.simplex2((x + 100) / (this.noiseStepScale / this.microTerrainDivisor), (z + 100) / (this.noiseStepScale / this.microTerrainDivisor) + this.noiseOffset * this.microTerrainDivisor) * this.microTerrainMaxHeight;
+                        let subTerrain = noise.simplex2(x / this.noiseStepScale, z / this.noiseStepScale + this.noiseOffset) * this.subTerrainMaxHeight;
+                        let superTerrain = Math.cos(2 * Math.PI * x / this.width) * this.superTerrainMaxHeight;
+                        this.terrainArray[z][x] = microTerrain + subTerrain + superTerrain;
+                        this.terrainArray[z][x] = (this.terrainArray[z][x] <= this.minHeight) ? this.minHeight : this.terrainArray[z][x];
+                    }
+                }
+                // Next call will be offset to simulate movement
+                this.noiseOffset -= this.noiseOffsetIncrement;
+            }
 
-        // Positionsing camera
-        var camera = new THREE.PerspectiveCamera(fov, width / height, nearClip, farClip)
-        camera.position.x = terrainWidth / 2;
-        camera.position.y = 3;
-        camera.position.z = terrainDepth * 1;
-
-        // Adding renderer to DOM
-        var renderer = new THREE.WebGLRenderer();
-        renderer.setSize(width, height);
-        document.body.appendChild(renderer.domElement);
-
-        // Handler to resize window
-        window.addEventListener("resize", function () {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            renderer.setSize(width, height);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-        });
-
-        // Orbit controls
-        if (orbitControls) {
-            var controls = new THREE.OrbitControls(camera, renderer.domElement);
-            camera.lookAt(new THREE.Vector3(terrainWidth / 2, 0, 0));
-            controls.target = new THREE.Vector3(terrainWidth / 2, 0, 0);
-            camera.updateProjectionMatrix();
-        }
-
-        // Initialise 2D array for random values
-        var terrainArray = new Array(terrainDepth + 1);
-        for (let z = 0; z < terrainDepth + 1; z++) {
-            terrainArray[z] = new Array(terrainWidth + 1);
-        }
-
-        // Seed simplex noise
-        noise.seed(Math.random());
-
-        // Generate terrain
-        generateTerrainHeight();
-
-        // Generate terrain geometry
-        var geometry = new THREE.Geometry();
-        for (let z = 0; z < terrainDepth; z++) {
-            for (let x = 0; x < terrainWidth; x++) {
-                // Creating a plane with vertices in order:
-                // 0-1
-                // |/|
-                // 2-3
-                geometry.vertices.push(
-                    new THREE.Vector3(x, terrainArray[z][x], z),
-                    new THREE.Vector3(x + 1, terrainArray[z][x + 1], z),
-                    new THREE.Vector3(x, terrainArray[z + 1][x], z + 1),
-                    new THREE.Vector3(x + 1, terrainArray[z + 1][x + 1], z + 1),
-                );
-
-                // Getting index for 0th vertex 
-                let planeIndex = z * terrainWidth * 4 + x * 4;
-                // Generating faces using vertices 0, 1, 2 and 1, 2, 3
-                geometry.faces.push(
-                    new THREE.Face3(planeIndex, planeIndex + 2, planeIndex + 1),
-                    new THREE.Face3(planeIndex + 1, planeIndex + 2, planeIndex + 3),
-                );
+            stepTerrainHeight() {
+                let z = 0;
+                let nextTerrainArray = new Array();
+                this.terrainArray.pop();
+                for (let x = 0; x < this.width + 1; x++) {
+                    let microTerrain = noise.simplex2((x + 100) / (this.noiseStepScale / this.microTerrainDivisor), (z + 100) / (this.noiseStepScale / this.microTerrainDivisor) + this.noiseOffset * this.microTerrainDivisor) * this.microTerrainMaxHeight;
+                    let subTerrain = noise.simplex2(x / this.noiseStepScale, z / this.noiseStepScale + this.noiseOffset) * this.subTerrainMaxHeight;
+                    let superTerrain = Math.cos(2 * Math.PI * x / this.width) * this.superTerrainMaxHeight;
+                    nextTerrainArray[x] = microTerrain + subTerrain + superTerrain;
+                    nextTerrainArray[x] = (nextTerrainArray[x] <= this.minHeight) ? this.minHeight : nextTerrainArray[x];
+                }
+                this.terrainArray.unshift(nextTerrainArray);
+                this.noiseOffset -= this.noiseOffsetIncrement;
             }
         }
 
-        // Genrating mesh
-        var meshMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFFFFF,
-            side: THREE.FrontSide,
-            vertexColors: THREE.FaceColors,
-        });
-        var mesh = new THREE.Mesh(geometry, meshMaterial);
-        scene.add(mesh);
+        class Terrain {
+            constructor() {
+                // Affects terrain
+                this.terrainWidth = 80;
+                this.terrainDepth = 100;
+                this.terrainStep = 0.6;
+                // Affects limits at which terrain is colored
+                this.snowLimit = 5;
+                this.mountainLimit = 0;
+                this.grassLimit = -6;
+                this.sandLimit = -7;
+                // Terrain colors
+                this.snowColor = 0xFFFFFF;
+                this.mountainColor = 0x292f42;
+                this.grassColor = 0x9bb2e0;
+                this.sandColor = 0x37393d;
+                this.waterColor = 0x6d98e8;
+                // Generating random terrain heights
+                this.terrainRandomiser = new TerrainRandomiser(this.terrainWidth, this.terrainDepth, this.sandLimit);
 
-        // Generating inverse
-        var inverseTerrainMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            side: THREE.BackSide,
-            fog: false,
-            wireframe: false,
-        });
-        var inverseTerrainMesh = new THREE.Mesh(geometry, inverseTerrainMaterial);
-        inverseTerrainMesh.position.setY(inverseTerrainMesh.position.y + 0.1);
-        mesh.add(inverseTerrainMesh);
+                // Generate terrain geometry
+                this.geometry = new THREE.Geometry();
+                for (let z = 0; z < this.terrainDepth; z++) {
+                    for (let x = 0; x < this.terrainWidth; x++) {
+                        // Creating a plane with vertices in order:
+                        // 0-1
+                        // |/|
+                        // 2-3
+                        this.geometry.vertices.push(
+                            new THREE.Vector3(x, this.terrainRandomiser.terrainArray[z][x], z),
+                            new THREE.Vector3(x + 1, this.terrainRandomiser.terrainArray[z][x + 1], z),
+                            new THREE.Vector3(x, this.terrainRandomiser.terrainArray[z + 1][x], z + 1),
+                            new THREE.Vector3(x + 1, this.terrainRandomiser.terrainArray[z + 1][x + 1], z + 1),
+                        );
 
-        // Add lighting
-        // scene.add(new THREE.AmbientLight(0x303030));
-        var light1 = new THREE.DirectionalLight(0xffffff);
-        light1.position.set(1, 1, 6);
-        scene.add(light1);
+                        // Getting index for 0th vertex 
+                        let planeIndex = z * this.terrainWidth * 4 + x * 4;
+                        // Generating faces using vertices 0, 1, 2 and 1, 2, 3
+                        this.geometry.faces.push(
+                            new THREE.Face3(planeIndex, planeIndex + 2, planeIndex + 1),
+                            new THREE.Face3(planeIndex + 1, planeIndex + 2, planeIndex + 3),
+                        );
+                    }
+                }
 
-        // Add sun to scene
-        var sunGeometry = new THREE.SphereGeometry(24, 32, 32);
-        var sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
-        sunAlpha.minFilter = THREE.NearestFilter;
-        var sunMaterial = new THREE.MeshToonMaterial({
-            color: sunColor,
-            alphaMap: sunAlpha,
-            transparent: true,
-            wireframe: false,
-            fog: false,
-            shininess: 0,
-        });
-        var sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.set(40, 12, -12)
-        scene.add(sunMesh);
+                // Genrating mesh
+                this.terrainMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xFFFFFF,
+                    side: THREE.FrontSide,
+                    vertexColors: THREE.FaceColors,
+                });
+                this.mesh = new THREE.Mesh(this.geometry, this.terrainMaterial);
+                scene.add(this.mesh);
 
-        // Generating sun inverse
-        var sunInverseMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            alphaMap: sunAlpha,
-            transparent: true,
-            side: THREE.BackSide,
-            wireframe: false,
-            fog: false,
-        });
-        var inverseSunMesh = new THREE.Mesh(sunGeometry, sunInverseMaterial);
-        inverseSunMesh.scale.set(1.01, 1.01, 1.01);
-        sunMesh.add(inverseSunMesh);
+                // Generating inverse
+                this.inverseTerrainMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    side: THREE.BackSide,
+                    fog: false,
+                    wireframe: false,
+                });
+                this.inverseTerrainMesh = new THREE.Mesh(this.geometry, this.inverseTerrainMaterial);
+                this.inverseTerrainMesh.position.setY(this.inverseTerrainMesh.position.y + 0.1);
+                this.mesh.add(this.inverseTerrainMesh);
+            }
 
-        // Adding audio handler as listener
-        window.onload = function () {
-            window.wallpaperRegisterAudioListener(handleWallpaperAudio);
-        };
+            updateTerrain() {
+                this.mesh.position.z += this.terrainStep;
+                if (this.mesh.position.z >= 1) {
+                    //reset etep and render next chunk
+                    this.mesh.position.z = 0;
+                    this.terrainRandomiser.stepTerrainHeight();
+                    for (let z = 0; z < this.terrainDepth; z++) {
+                        for (let x = 0; x < this.terrainWidth; x++) {
+                            let planeIndex = z * this.terrainWidth * 4 + x * 4;
+                            this.geometry.vertices[planeIndex].y = this.terrainRandomiser.terrainArray[z][x];
+                            this.geometry.vertices[planeIndex + 1].y = this.terrainRandomiser.terrainArray[z][x + 1];
+                            this.geometry.vertices[planeIndex + 2].y = this.terrainRandomiser.terrainArray[z + 1][x];
+                            this.geometry.vertices[planeIndex + 3].y = this.terrainRandomiser.terrainArray[z + 1][x + 1];
+                        }
+                    }
+                    this.updateTerrainColor();
+                    this.geometry.verticesNeedUpdate = true;
+                }
+            }
+
+            // Colors faces of a plane depending on the y values of vertices
+            updateTerrainColor() {
+                this.geometry.faces.forEach(function (face) {
+                    let maxY = Math.max(this.geometry.vertices[face.a].y, this.geometry.vertices[face.b].y, this.geometry.vertices[face.c].y);
+                    let minY = Math.min(this.geometry.vertices[face.a].y, this.geometry.vertices[face.b].y, this.geometry.vertices[face.c].y);
+                    if (maxY > this.snowLimit) {
+                        face.color.setHex(this.snowColor);
+                    } else if (maxY > this.mountainLimit) {
+                        face.color.setHex(this.mountainColor);
+                    } else if (maxY > this.grassLimit) {
+                        face.color.setHex(this.grassColor);
+                    } else if (maxY > this.sandLimit) {
+                        face.color.setHex(this.sandColor);
+                    } else {
+                        face.color.setHex(this.waterColor);
+                    }
+                }.bind(this));
+                this.geometry.colorsNeedUpdate = true;
+            }
+        }
+
+        class Sun {
+            constructor() {
+                this.sunColor = 0xff2025;
+                // Affects properties of sun
+                this.maxSunScale = 5;
+                // Add sun to scene
+                this.sunGeometry = new THREE.SphereGeometry(24, 32, 32);
+                this.sunAlpha = new THREE.TextureLoader().load("textures/sunAlpha.png");
+                this.sunAlpha.minFilter = THREE.NearestFilter;
+                this.sunMaterial = new THREE.MeshToonMaterial({
+                    color: this.sunColor,
+                    alphaMap: this.sunAlpha,
+                    transparent: true,
+                    wireframe: false,
+                    fog: false,
+                    shininess: 0,
+                });
+                this.sunMesh = new THREE.Mesh(this.sunGeometry, this.sunMaterial);
+                this.sunMesh.position.set(40, 12, -12)
+                scene.add(this.sunMesh);
+
+                // Generating sun inverse
+                this.inverseSunMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    alphaMap: this.sunAlpha,
+                    transparent: true,
+                    side: THREE.BackSide,
+                    wireframe: false,
+                    fog: false,
+                });
+                this.inverseSunMesh = new THREE.Mesh(this.sunGeometry, this.inverseSunMaterial);
+                this.inverseSunMesh.scale.set(1.01, 1.01, 1.01);
+                this.sunMesh.add(this.inverseSunMesh);
+            }
+        }
 
         // Converts from rgb string to hex number value
         function rgbToHex(rgb) {
@@ -274,98 +253,11 @@
             return hex;
         }
 
-        // Handles audio responsiveness
-        function handleWallpaperAudio(audioArray) {
-            let scaleDiff = maxSunScale - 1;
-            let total = 0;
-            for (let i = 0; i < audioArray.length; i++) {
-                total += audioArray[i];
-            }
-            let avg = total / audioArray.length;
-            let sunScale = (scaleDiff * avg) + 1;
 
-            sunMesh.scale.set(sunScale, sunScale, sunScale);
-        }
-
-        // Generates terrain
-        // Terrain composed of micro, sub and superterrain
-        // Microterrain and subterrain consists of simplex noise
-        // Superterrain consists of sine/cosine function to create a valley
-        function generateTerrainHeight() {
-            for (let z = 0; z < terrainDepth + 1; z++) {
-                for (let x = 0; x < terrainWidth + 1; x++) {
-                    let microTerrain = noise.simplex2((x + 100) / (noiseStepScale / microTerrainDivisor), (z + 100) / (noiseStepScale / microTerrainDivisor) + noiseOffset * microTerrainDivisor) * microTerrainMaxHeight;
-                    let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
-                    let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                    terrainArray[z][x] = microTerrain + subTerrain + superTerrain;
-                    terrainArray[z][x] = (terrainArray[z][x] <= sandLimit) ? sandLimit : terrainArray[z][x];
-                }
-            }
-            // Next call will be offset to simulate movement
-            noiseOffset -= noiseOffsetIncrement;
-        }
-
-        function stepTerrainHeight() {
-            let z = 0;
-            let nextTerrainArray = new Array();
-            terrainArray.pop();
-            for (let x = 0; x < terrainWidth + 1; x++) {
-                let microTerrain = noise.simplex2((x + 100) / (noiseStepScale / microTerrainDivisor), (z + 100) / (noiseStepScale / microTerrainDivisor) + noiseOffset * microTerrainDivisor) * microTerrainMaxHeight;
-                let subTerrain = noise.simplex2(x / noiseStepScale, z / noiseStepScale + noiseOffset) * subTerrainMaxHeight;
-                let superTerrain = Math.cos(2 * Math.PI * x / terrainWidth) * superTerrainMaxHeight;
-                nextTerrainArray[x] = microTerrain + subTerrain + superTerrain;
-                nextTerrainArray[x] = (nextTerrainArray[x] <= sandLimit) ? sandLimit : nextTerrainArray[x];
-            }
-            terrainArray.unshift(nextTerrainArray);
-            noiseOffset -= noiseOffsetIncrement;
-        }
-
-        // Colors faces of a plane depending on the y values of vertices
-        function updateTerrainColor() {
-            geometry.faces.forEach(function (face) {
-                let maxY = Math.max(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
-                let minY = Math.min(geometry.vertices[face.a].y, geometry.vertices[face.b].y, geometry.vertices[face.c].y);
-                if (maxY > snowLimit) {
-                    face.color.setHex(snowColor);
-                } else if (maxY > mountainLimit) {
-                    face.color.setHex(mountainColor);
-                } else if (maxY > grassLimit) {
-                    face.color.setHex(grassColor);
-                } else if (maxY > sandLimit) {
-                    face.color.setHex(sandColor);
-                } else {
-                    face.color.setHex(waterColor);
-                }
-            });
-            geometry.colorsNeedUpdate = true;
-        }
 
         // Game logic
         function update() {
-
-            //TODO - move terrain by step
-            mesh.position.z += terrainStep;
-            if (mesh.position.z >= 1) {
-                //reset etep and render next chunk
-                mesh.position.z = 0;
-                stepTerrainHeight();
-            }
-
-            //TODO - place inside method
-            for (let z = 0; z < terrainDepth; z++) {
-                for (let x = 0; x < terrainWidth; x++) {
-                    let planeIndex = z * terrainWidth * 4 + x * 4;
-                    geometry.vertices[planeIndex].y = terrainArray[z][x];
-                    geometry.vertices[planeIndex + 1].y = terrainArray[z][x + 1];
-                    geometry.vertices[planeIndex + 2].y = terrainArray[z + 1][x];
-                    geometry.vertices[planeIndex + 3].y = terrainArray[z + 1][x + 1];
-                }
-            }
-            geometry.verticesNeedUpdate = true;
-            geometry.computeFaceNormals();
-            geometry.computeVertexNormals();
-
-            updateTerrainColor();
+            terrainModel.updateTerrain();
         }
 
         // Render scenee
@@ -382,7 +274,130 @@
             render();
         }
 
-        gameLoop();
+        function init() {
+            scene = new THREE.Scene();
+            terrainModel = new Terrain();
+            sunModel = new Sun();
+
+
+            // Adding fog to scene
+            if (dispFog) {
+                scene.fog = new THREE.Fog(new THREE.Color(0xaed4fa), 0.0025, 100);
+            }
+
+            // Add lighting
+            var light = new THREE.DirectionalLight(0xffffff);
+            light.position.set(1, 1, 6);
+            scene.add(light);
+
+            // Loading texture for background
+            scene.background = new THREE.TextureLoader().load("textures/backgroundTexture.png")
+
+            // Positioning camera
+            camera = new THREE.PerspectiveCamera(fov, width / height, 1, 1000)
+            camera.position.x = terrainModel.terrainWidth / 2;
+            camera.position.y = 3;
+            camera.position.z = terrainModel.terrainDepth * 1;
+
+            // Adding renderer to DOM
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(width, height);
+            document.body.appendChild(renderer.domElement);
+
+            // Handler to resize window
+            window.addEventListener("resize", function () {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+
+            // Orbit controls
+            if (orbitControls) {
+                var controls = new THREE.OrbitControls(camera, renderer.domElement);
+                camera.lookAt(new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0));
+                controls.target = new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0);
+                camera.updateProjectionMatrix();
+            }
+
+            // WallpaperEngine properties
+            window.wallpaperPropertyListener = {
+                // General Properties ie fps slider in settings etc
+                applyGeneralProperties: function (properties) {
+                    if (properties.fps) {
+                        fps = properties.fps;
+                    }
+                },
+
+                // User Properties
+                applyUserProperties: function (properties) {
+                    if (properties.audioResponsiveness) {
+                        sunModel.maxSunScale = properties.audioResponsiveness.value;
+                    }
+                    if (properties.fogColor) {
+                        let fogColor = rgbToHex(properties.fogColor.value);
+                        scene.fog = new THREE.Fog(new THREE.Color(fogColor), 0.0025, 100);
+                    }
+                    if (properties.snowColor) {
+                        terrainModel.snowColor = rgbToHex(properties.snowColor.value);
+                    }
+                    if (properties.mountainColor) {
+                        terrainModel.mountainColor = rgbToHex(properties.mountainColor.value);
+                    }
+                    if (properties.grassColor) {
+                        terrainModel.grassColor = rgbToHex(properties.grassColor.value);
+                    }
+                    if (properties.sandColor) {
+                        terrainModel.sandColor = rgbToHex(properties.sandColor.value);
+                    }
+                    if (properties.waterColor) {
+                        terrainModel.waterColor = rgbToHex(properties.waterColor.value);
+                    }
+                    if (properties.sunColor) {
+                        sunModel.sunColor = rgbToHex(properties.sunColor.value);
+                        sunModel.sunMesh.material.color.setHex(sunModel.sunColor);
+                    }
+                    if (properties.velocity) {
+                        terrainModel.terrainStep = properties.velocity.value / 10;
+                    }
+                    if (properties.backgroundImage) {
+                        let imagePath;
+                        if (properties.backgroundImage.value) {
+                            // Create a valid location path
+                            imagePath = "file:///" + properties.backgroundImage.value;
+                        } else {
+                            // Reset image when null
+                            imagePath = "textures/backgroundTexture.png";
+                        }
+                        scene.background = new THREE.TextureLoader().load(imagePath);
+                    }
+                }
+            };
+
+
+            // Adding audio handler as listener
+            window.onload = function () {
+                window.wallpaperRegisterAudioListener(function (audioArray) {
+                    let scaleDiff = sunModel.maxSunScale - 1;
+                    let total = 0;
+                    for (let i = 0; i < audioArray.length; i++) {
+                        total += audioArray[i];
+                    }
+                    let avg = total / audioArray.length;
+                    let sunScale = (scaleDiff * avg) + 1;
+
+                    sunModel.sunMesh.scale.set(sunScale, sunScale, sunScale);
+                });
+            };
+
+
+            gameLoop();
+        }
+
+        init();
+
+
     </script>
 </body>
 
