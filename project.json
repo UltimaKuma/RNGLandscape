@@ -1,95 +1,88 @@
 {
-	"file" : "index.html",
-	"general" : 
-	{
-		"properties" : 
-		{
-			"audioResponsiveness" : 
-			{
-				"editable" : true,
-				"max" : 20,
-				"min" : 1,
-				"order" : 8,
-				"text" : "Audio responsiveness",
-				"type" : "slider",
-				"value" : 5
+	"file": "index.html",
+	"general": {
+		"properties": {
+			"audioResponsiveness": {
+				"editable": true,
+				"max": 20,
+				"min": 1,
+				"order": 107,
+				"text": "Audio responsiveness",
+				"type": "slider",
+				"value": 5
 			},
-			"backgroundImage" : 
-			{
-				"fileType" : "image",
-				"order" : 10,
-				"text" : "Background image",
-				"type" : "file"
+			"backgroundImage": {
+				"fileType": "image",
+				"order": 109,
+				"text": "Background image",
+				"type": "file"
 			},
-			"fogColor" : 
-			{
-				"order" : 1,
-				"text" : "Fog color",
-				"type" : "color",
-				"value" : "0.68235 0.83137 0.98039"
+			"bdd": {
+				"order": 110,
+				"text": "BDD (experimental)",
+				"type": "bool",
+				"value": false
 			},
-			"grassColor" : 
-			{
-				"order" : 4,
-				"text" : "Grass color",
-				"type" : "color",
-				"value" : "0.60784 0.69803 0.87843"
+			"fogColor": {
+				"order": 100,
+				"text": "Fog color",
+				"type": "color",
+				"value": "0.68235 0.83137 0.98039"
 			},
-			"mountainColor" : 
-			{
-				"order" : 3,
-				"text" : "Mountain color",
-				"type" : "color",
-				"value" : "0.16078 0.18431 0.25882"
+			"grassColor": {
+				"order": 103,
+				"text": "Grass color",
+				"type": "color",
+				"value": "0.60784 0.69803 0.87843"
 			},
-			"sandColor" : 
-			{
-				"order" : 5,
-				"text" : "Sand color",
-				"type" : "color",
-				"value" : "0.21569 0.22353 0.23922"
+			"mountainColor": {
+				"order": 102,
+				"text": "Mountain color",
+				"type": "color",
+				"value": "0.16078 0.18431 0.25882"
 			},
-			"schemecolor" : 
-			{
-				"order" : 0,
-				"text" : "ui_browse_properties_scheme_color",
-				"type" : "color",
-				"value" : "0.8509803921568627 0.3058823529411765 0.3058823529411765"
+			"sandColor": {
+				"order": 104,
+				"text": "Sand color",
+				"type": "color",
+				"value": "0.21569 0.22353 0.23922"
 			},
-			"snowColor" : 
-			{
-				"order" : 2,
-				"text" : "Snow color",
-				"type" : "color",
-				"value" : "1 1 1"
+			"schemecolor": {
+				"order": 0,
+				"text": "ui_browse_properties_scheme_color",
+				"type": "color",
+				"value": "0.8509803921568627 0.3058823529411765 0.3058823529411765"
 			},
-			"sunColor" : 
-			{
-				"order" : 7,
-				"text" : "Sun color",
-				"type" : "color",
-				"value" : "1 0.12549 0.0.14510"
+			"snowColor": {
+				"order": 101,
+				"text": "Snow color",
+				"type": "color",
+				"value": "1 1 1"
 			},
-			"velocity" : 
-			{
-				"editable" : true,
-				"max" : 10,
-				"min" : 0,
-				"order" : 9,
-				"text" : "Velocity",
-				"type" : "slider",
-				"value" : 6
+			"sunColor": {
+				"order": 106,
+				"text": "Sun color",
+				"type": "color",
+				"value": "1 0.12549 0.0.14510"
 			},
-			"waterColor" : 
-			{
-				"order" : 6,
-				"text" : "Water color",
-				"type" : "color",
-				"value" : "0.42745 0.59608 0.90980"
+			"velocity": {
+				"editable": true,
+				"max": 10,
+				"min": 0,
+				"order": 108,
+				"text": "Velocity",
+				"type": "slider",
+				"value": 6
+			},
+			"waterColor": {
+				"order": 105,
+				"text": "Water color",
+				"type": "color",
+				"value": "0.42745 0.59608 0.90980"
 			}
 		},
-		"supportsaudioprocessing" : true
+		"supportsaudioprocessing": true
 	},
-	"title" : "RNG Landscape with BDD",
-	"type" : "web"
+	"title": "RNG Landscape with BDD",
+	"type": "web"
 }
