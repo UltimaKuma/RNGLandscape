@@ -34,7 +34,8 @@
         var camera;
         var terrainModel;
         var sunModel;
-        var bddModel;
+
+        var optionalUpdateQueue = new Array();
 
         // Affects display
         const fov = 75;
@@ -252,9 +253,9 @@
                 this.xRotationOffset = Math.PI / 2;
                 this.yRotationOffset = Math.PI;
                 this.zRotationOffset = Math.PI / 2;
-                this.xPos;
-                this.yPos;
-                this.zPos;
+                this.xPos = sunModel.sunMesh.position.x;
+                this.yPos = sunModel.sunMesh.position.y;
+                this.zPos = sunModel.sunMesh.position.z;
                 // Instantiate a loader
                 let loader = new THREE.GLTFLoader();
 
@@ -275,6 +276,8 @@
                             };
                             if (o.parent.name == "bddInverse") o.material.side = THREE.FrontSide;
                         });
+
+                        optionalUpdateQueue.push(this);
                     }.bind(this),
 
                     // called while loading is progressing
@@ -289,13 +292,15 @@
                 );
 
                 this.trailGeometry = new THREE.Geometry();
-                this.trailGeometry.vertices = new Array(100);
-                console.log(this.trailGeometry.vertices.length);
+                // this.trailGeometry.vertices = new Array(100);
+                for (let i = 0; i < 100; i++) {
+                    this.trailGeometry.vertices.unshift(new THREE.Vector3(this.xPos, this.yPos, this.zPos));
+                }
+
                 this.trailLine = new THREE.Line(this.trailGeometry, new THREE.LineBasicMaterial({
                     color: 0xffffff,
                 }));
                 scene.add(this.trailLine);
-
             }
 
             toToonMaterial(material) {
@@ -304,7 +309,7 @@
                     fog: false,
                     wireframe: false,
                     shininess: 0,
-                    // TURNS OUT ALL MODEL MESHES WERE BACKWARDS
+                    // TURNS OUT ALL MODEL MESHES WERE BACKWARDS (Aside from mouth)
                     side: THREE.BackSide
                 });
                 return toonMaterial;
@@ -325,17 +330,13 @@
                 }
                 this.trailGeometry.verticesNeedUpdate = true;
 
-
                 // Rotate around center
                 this.bddScene.rotation.set(timer * 7 + this.xRotationOffset, timer * 5 + this.yRotationOffset, timer * 3 + this.zRotationOffset);
+            }
 
-
-                // for (var i = 0; i < group.children.length; i++) {
-                //     var child = group.children[i];
-                //     child.rotation.y += 0.005;
-                // }
-
-
+            remove() {
+                scene.remove(this.bddScene);
+                scene.remove(this.trailLine);
             }
         }
 
@@ -349,12 +350,13 @@
             return hex;
         }
 
-
-
         // Game logic
         function update() {
             terrainModel.updateTerrain();
-            bddModel.update();
+            // More extendable later on
+            optionalUpdateQueue.forEach(function (model) {
+                model.update();
+            });
         }
 
         // Render scenee
@@ -375,7 +377,6 @@
             scene = new THREE.Scene();
             terrainModel = new Terrain();
             sunModel = new Sun();
-
 
             // Adding fog to scene
             if (dispFog) {
@@ -415,7 +416,7 @@
             if (orbitControls) {
                 var controls = new THREE.OrbitControls(camera, renderer.domElement);
                 camera.lookAt(new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0));
-                // controls.target = new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0);
+                controls.target = new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0);
                 camera.updateProjectionMatrix();
             }
 
@@ -470,6 +471,24 @@
                         }
                         scene.background = new THREE.TextureLoader().load(imagePath);
                     }
+                    if (properties.bdd) {
+                        // If index is -1, does not exist
+                        let index = optionalUpdateQueue.findIndex(function (model) {
+                            return model instanceof BDD;
+                        });
+                        if (properties.bdd.value && index === -1) {
+                            // If bdd on but doesnt exist
+                            // Call constructor, which will add itself to update queue
+                            new BDD();
+
+                        } else if (!properties.bdd.value && index !== -1) {
+                            // If bdd off but does exist
+                            // Remove model from scene
+                            optionalUpdateQueue[index].remove();
+                            optionalUpdateQueue.splice(index);
+
+                        }
+                    }
                 }
             };
 
@@ -488,8 +507,6 @@
                     sunModel.sunMesh.scale.set(sunScale, sunScale, sunScale);
                 });
             };
-
-            bddModel = new BDD();
 
             gameLoop();
         }
