@@ -1,7 +1,7 @@
 # RNG Landscape
 A randomly-generated audio-responsive customizeable landscape for use in Wallpaper Engine.   
 
-<img src="preview.png">
+<img src="preview.gif">
 
 
 Coded in Javascript using the ThreeJS library.  
