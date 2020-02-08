@@ -1,88 +1,118 @@
 {
-	"file": "index.html",
-	"general": {
-		"properties": {
-			"audioResponsiveness": {
-				"editable": true,
-				"max": 20,
-				"min": 1,
-				"order": 107,
-				"text": "Audio responsiveness",
-				"type": "slider",
-				"value": 5
+	"contentrating" : "Questionable",
+	"description" : "Yep",
+	"file" : "index.html",
+	"general" : 
+	{
+		"properties" : 
+		{
+			"backgroundImage" : 
+			{
+				"fileType" : "image",
+				"order" : 108,
+				"text" : "Background image",
+				"type" : "file"
 			},
-			"backgroundImage": {
-				"fileType": "image",
-				"order": 109,
-				"text": "Background image",
-				"type": "file"
+			"bdd" : 
+			{
+				"order" : 109,
+				"text" : "BDD",
+				"type" : "bool",
+				"value" : false
 			},
-			"bdd": {
-				"order": 110,
-				"text": "BDD (experimental)",
-				"type": "bool",
-				"value": false
+			"bddResponsiveness" : 
+			{
+				"editable" : true,
+				"max" : 10,
+				"min" : 1,
+				"order" : 111,
+				"text" : "BDD audio response",
+				"type" : "slider",
+				"value" : 5
 			},
-			"fogColor": {
-				"order": 100,
-				"text": "Fog color",
-				"type": "color",
-				"value": "0.68235 0.83137 0.98039"
+			"fogColor" : 
+			{
+				"order" : 100,
+				"text" : "Fog color",
+				"type" : "color",
+				"value" : "0.68235 0.83137 0.98039"
 			},
-			"grassColor": {
-				"order": 103,
-				"text": "Grass color",
-				"type": "color",
-				"value": "0.60784 0.69803 0.87843"
+			"grassColor" : 
+			{
+				"order" : 103,
+				"text" : "Grass color",
+				"type" : "color",
+				"value" : "0.60784 0.69803 0.87843"
 			},
-			"mountainColor": {
-				"order": 102,
-				"text": "Mountain color",
-				"type": "color",
-				"value": "0.16078 0.18431 0.25882"
+			"mountainColor" : 
+			{
+				"order" : 102,
+				"text" : "Mountain color",
+				"type" : "color",
+				"value" : "0.16078 0.18431 0.25882"
 			},
-			"sandColor": {
-				"order": 104,
-				"text": "Sand color",
-				"type": "color",
-				"value": "0.21569 0.22353 0.23922"
+			"sandColor" : 
+			{
+				"order" : 104,
+				"text" : "Sand color",
+				"type" : "color",
+				"value" : "0.21569 0.22353 0.23922"
 			},
-			"schemecolor": {
-				"order": 0,
-				"text": "ui_browse_properties_scheme_color",
-				"type": "color",
-				"value": "0.8509803921568627 0.3058823529411765 0.3058823529411765"
+			"schemecolor" : 
+			{
+				"order" : 0,
+				"text" : "ui_browse_properties_scheme_color",
+				"type" : "color",
+				"value" : "0.8509803921568627 0.3058823529411765 0.3058823529411765"
 			},
-			"snowColor": {
-				"order": 101,
-				"text": "Snow color",
-				"type": "color",
-				"value": "1 1 1"
+			"snowColor" : 
+			{
+				"order" : 101,
+				"text" : "Snow color",
+				"type" : "color",
+				"value" : "1 1 1"
 			},
-			"sunColor": {
-				"order": 106,
-				"text": "Sun color",
-				"type": "color",
-				"value": "1 0.12549 0.0.14510"
+			"sunColor" : 
+			{
+				"order" : 106,
+				"text" : "Sun color",
+				"type" : "color",
+				"value" : "1 0.12549 0.0.14510"
 			},
-			"velocity": {
-				"editable": true,
-				"max": 10,
-				"min": 0,
-				"order": 108,
-				"text": "Velocity",
-				"type": "slider",
-				"value": 6
+			"sunResponsiveness" : 
+			{
+				"editable" : true,
+				"max" : 10,
+				"min" : 1,
+				"order" : 110,
+				"text" : "Sun audio response",
+				"type" : "slider",
+				"value" : 5
 			},
-			"waterColor": {
-				"order": 105,
-				"text": "Water color",
-				"type": "color",
-				"value": "0.42745 0.59608 0.90980"
+			"velocity" : 
+			{
+				"editable" : true,
+				"max" : 10,
+				"min" : 0,
+				"order" : 107,
+				"text" : "Terrain velocity",
+				"type" : "slider",
+				"value" : 6
+			},
+			"waterColor" : 
+			{
+				"order" : 105,
+				"text" : "Water color",
+				"type" : "color",
+				"value" : "0.42745 0.59608 0.90980"
 			}
 		},
-		"supportsaudioprocessing": true
+		"supportsaudioprocessing" : true
 	},
-	"title": "RNG Landscape with BDD",
-	"type": "web"
+	"preview" : "preview.jpg",
+	"tags" : [ "Landscape" ],
+	"title" : "RNG Landscape",
+	"type" : "web",
+	"visibility" : "public",
+	"workshopid" : "1971745290"
 }

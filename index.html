@@ -34,6 +34,7 @@
         var camera;
         var terrainModel;
         var sunModel;
+        var audioResponse = 0;
 
         var optionalUpdateQueue = new Array();
 
@@ -244,18 +245,28 @@
                 this.inverseSunMesh.scale.set(1.01, 1.01, 1.01);
                 this.sunMesh.add(this.inverseSunMesh);
             }
+
+            update() {
+                let scaleDiff = sunModel.maxSunScale - 1;
+                let sunScale = (scaleDiff * audioResponse) + 1;
+                sunModel.sunMesh.scale.set(sunScale, sunScale, sunScale);
+            }
         }
 
         class BDD {
             constructor() {
                 this.bddScene;
                 this.orbitRadius = 36;
+                // BDD rotation
                 this.xRotationOffset = Math.PI / 2;
                 this.yRotationOffset = Math.PI;
                 this.zRotationOffset = Math.PI / 2;
+                // BDD position (is relative to sun)
                 this.xPos = sunModel.sunMesh.position.x;
                 this.yPos = sunModel.sunMesh.position.y;
                 this.zPos = sunModel.sunMesh.position.z;
+                //
+                this.maxTrailScale = 5;
                 // Instantiate a loader
                 let loader = new THREE.GLTFLoader();
 
@@ -318,12 +329,12 @@
             update() {
                 // Function for orbit around "sun"
                 let timer = Date.now() * 0.00025;
-                this.xPos = Math.sin(timer * 7) * this.orbitRadius + sunModel.sunMesh.position.x;
-                this.yPos = Math.cos(timer * 5) * this.orbitRadius + sunModel.sunMesh.position.y;
-                this.zPos = Math.cos(timer * 3) * this.orbitRadius + sunModel.sunMesh.position.z;
+                this.xPos = Math.sin(timer * 7) * this.orbitRadius * ((this.maxTrailScale - 1) * audioResponse + 1) + sunModel.sunMesh.position.x;
+                this.yPos = Math.cos(timer * 5) * this.orbitRadius * ((this.maxTrailScale - 1) * audioResponse + 1) + sunModel.sunMesh.position.y;
+                this.zPos = Math.cos(timer * 3) * this.orbitRadius * ((this.maxTrailScale - 1) * audioResponse + 1) + sunModel.sunMesh.position.z;
                 this.bddScene.position.set(this.xPos, this.yPos, this.zPos)
 
-                // Add trail following bdd
+                // Update trail following bdd
                 this.trailGeometry.vertices.unshift(new THREE.Vector3(this.xPos, this.yPos, this.zPos));
                 if (this.trailGeometry.vertices.length > 100) {
                     this.trailGeometry.vertices.pop();
@@ -353,6 +364,7 @@
         // Game logic
         function update() {
             terrainModel.updateTerrain();
+            sunModel.update();
             // More extendable later on
             optionalUpdateQueue.forEach(function (model) {
                 model.update();
@@ -431,8 +443,8 @@
 
                 // User Properties
                 applyUserProperties: function (properties) {
-                    if (properties.audioResponsiveness) {
-                        sunModel.maxSunScale = properties.audioResponsiveness.value;
+                    if (properties.sunResponsiveness) {
+                        sunModel.maxSunScale = properties.sunResponsiveness.value;
                     }
                     if (properties.fogColor) {
                         let fogColor = rgbToHex(properties.fogColor.value);
@@ -480,13 +492,22 @@
                             // If bdd on but doesnt exist
                             // Call constructor, which will add itself to update queue
                             new BDD();
-
                         } else if (!properties.bdd.value && index !== -1) {
                             // If bdd off but does exist
                             // Remove model from scene
                             optionalUpdateQueue[index].remove();
                             optionalUpdateQueue.splice(index);
-
+                        }
+                    }
+                    if (properties.bddResponsiveness) {
+                        // If index is -1, does not exist
+                        let index = optionalUpdateQueue.findIndex(function (model) {
+                            return model instanceof BDD;
+                        });
+                        if (index !== -1) {
+                            // If bdd off but does exist
+                            // Remove model from scene
+                            optionalUpdateQueue[index].maxTrailScale = properties.bddResponsiveness.value;
                         }
                     }
                 }
@@ -496,15 +517,12 @@
             // Adding audio handler as listener
             window.onload = function () {
                 window.wallpaperRegisterAudioListener(function (audioArray) {
-                    let scaleDiff = sunModel.maxSunScale - 1;
                     let total = 0;
+
                     for (let i = 0; i < audioArray.length; i++) {
                         total += audioArray[i];
                     }
-                    let avg = total / audioArray.length;
-                    let sunScale = (scaleDiff * avg) + 1;
-
-                    sunModel.sunMesh.scale.set(sunScale, sunScale, sunScale);
+                    audioResponse = total / audioArray.length;
                 });
             };
 
