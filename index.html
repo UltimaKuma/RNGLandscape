@@ -23,24 +23,38 @@
 </head>
 
 <body>
-    <script src="js/three.min.js"></script>
-    <script src="js/GLTFLoader.js"></script>
-    <script src="js/OrbitControls.js"></script>
-    <script src="js/perlin.js"></script>
+    <script src="js/three/three.min.js"></script>
+    <script src="js/three/GLTFLoader.js"></script>
+    <script src="js/three/OrbitControls.js"></script>
+    <script src="js/three/perlin.js"></script>
+
+    <script src="js/three/EffectComposer.js"></script>
+    <script src="js/three/CopyShader.js"></script>
+    <script src="js/three/ShaderPass.js"></script>
+    <script src="js/three/RenderPass.js"></script>
+
+    <script src="js/three/GlitchPass.js"></script>
+    <script src="js/three/DigitalGlitch.js"></script>
 
     <script>
+
         var scene;
         var renderer;
         var camera;
+        var composer;
         var terrainModel;
         var sunModel;
-        var audioResponse = 0;
+        var glitchPass;
+        var audioBassResponse = 0;
+        // TODO - remove
+        var currentAudioArray;
 
-        var optionalUpdateQueue = new Array();
+        var optionalUpdateQueue = [];
 
         // Affects display
         const fov = 75;
         const dispFog = true;
+        // TODO - remove
         const orbitControls = false;
         var fps = 60;
 
@@ -244,12 +258,25 @@
                 this.inverseSunMesh = new THREE.Mesh(this.sunGeometry, this.inverseSunMaterial);
                 this.inverseSunMesh.scale.set(1.01, 1.01, 1.01);
                 this.sunMesh.add(this.inverseSunMesh);
+
+                // Audio
+                this.audioResponse = 0;
+            }
+
+            setAudio(audioArray) {
+                if (audioArray === undefined) return;
+                let total = 0;
+                // Average whole audio response
+                for (let i = 0; i < audioArray.length; i++) {
+                    total += audioArray[i];
+                }
+                this.audioResponse = total / audioArray.length;
             }
 
             update() {
                 let scaleDiff = sunModel.maxSunScale - 1;
-                let sunScale = (scaleDiff * audioResponse) + 1;
-                sunModel.sunMesh.scale.set(sunScale, sunScale, sunScale);
+                let sunScale = (scaleDiff * this.audioResponse) + 1;
+                this.sunMesh.scale.set(sunScale, sunScale, sunScale);
             }
         }
 
@@ -265,7 +292,9 @@
                 this.xPos = sunModel.sunMesh.position.x;
                 this.yPos = sunModel.sunMesh.position.y;
                 this.zPos = sunModel.sunMesh.position.z;
-                //
+                // Audio
+                this.audioResponse = 0
+                // Trail audio max
                 this.maxTrailScale = 5;
                 // Instantiate a loader
                 let loader = new THREE.GLTFLoader();
@@ -326,12 +355,22 @@
                 return toonMaterial;
             }
 
+            setAudio(audioArray) {
+                if (audioArray === undefined) console.log(audioArray);
+                let total = 0;
+                // Average whole audio response
+                for (let i = 0; i < audioArray.length; i++) {
+                    total += audioArray[i];
+                }
+                this.audioResponse = total / audioArray.length;
+            }
+
             update() {
                 // Function for orbit around "sun"
                 let timer = Date.now() * 0.00025;
-                this.xPos = Math.sin(timer * 7) * this.orbitRadius * ((this.maxTrailScale - 1) * audioResponse + 1) + sunModel.sunMesh.position.x;
-                this.yPos = Math.cos(timer * 5) * this.orbitRadius * ((this.maxTrailScale - 1) * audioResponse + 1) + sunModel.sunMesh.position.y;
-                this.zPos = Math.cos(timer * 3) * this.orbitRadius * ((this.maxTrailScale - 1) * audioResponse + 1) + sunModel.sunMesh.position.z;
+                this.xPos = Math.sin(timer * 7) * this.orbitRadius * ((this.maxTrailScale - 1) * this.audioResponse + 1) + sunModel.sunMesh.position.x;
+                this.yPos = Math.cos(timer * 5) * this.orbitRadius * ((this.maxTrailScale - 1) * this.audioResponse + 1) + sunModel.sunMesh.position.y;
+                this.zPos = Math.cos(timer * 3) * this.orbitRadius * ((this.maxTrailScale - 1) * this.audioResponse + 1) + sunModel.sunMesh.position.z;
                 this.bddScene.position.set(this.xPos, this.yPos, this.zPos)
 
                 // Update trail following bdd
@@ -364,14 +403,23 @@
         // Game logic
         function update() {
             terrainModel.updateTerrain();
+            // TODO - Update audio response
+            sunModel.setAudio(currentAudioArray);
             sunModel.update();
-            // More extendable later on
+            // Optional objects updated
             optionalUpdateQueue.forEach(function (model) {
+                model.setAudio(currentAudioArray);
                 model.update();
             });
+            // Update shader
+            if (audioBassResponse >= 0.015) {
+                glitchPass.enabled = true;
+            } else {
+                glitchPass.enabled = false;
+            }
         }
 
-        // Render scenee
+        // Render scene
         function render() {
             renderer.render(scene, camera);
         }
@@ -382,11 +430,13 @@
                 requestAnimationFrame(gameLoop);
             }, 1000 / fps);
             update();
-            render();
+            composer.render();
         }
 
         function init() {
             scene = new THREE.Scene();
+
+            // Initialising mandatory components of scene
             terrainModel = new Terrain();
             sunModel = new Sun();
 
@@ -415,6 +465,14 @@
             renderer.setSize(width, height);
             document.body.appendChild(renderer.domElement);
 
+            // Post
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+            glitchPass = new THREE.GlitchPass(0);
+            composer.addPass(glitchPass);
+            console.log(glitchPass);
+
+
             // Handler to resize window
             window.addEventListener("resize", function () {
                 width = window.innerWidth;
@@ -432,7 +490,7 @@
                 camera.updateProjectionMatrix();
             }
 
-            // WallpaperEngine properties
+            // WallpaperEngine properties handler
             window.wallpaperPropertyListener = {
                 // General Properties ie fps slider in settings etc
                 applyGeneralProperties: function (properties) {
@@ -443,9 +501,6 @@
 
                 // User Properties
                 applyUserProperties: function (properties) {
-                    if (properties.sunResponsiveness) {
-                        sunModel.maxSunScale = properties.sunResponsiveness.value;
-                    }
                     if (properties.fogColor) {
                         let fogColor = rgbToHex(properties.fogColor.value);
                         scene.fog = new THREE.Fog(new THREE.Color(fogColor), 0.0025, 100);
@@ -483,6 +538,9 @@
                         }
                         scene.background = new THREE.TextureLoader().load(imagePath);
                     }
+                    if (properties.sunResponsiveness) {
+                        sunModel.maxSunScale = properties.sunResponsiveness.value;
+                    }
                     if (properties.bdd) {
                         // If index is -1, does not exist
                         let index = optionalUpdateQueue.findIndex(function (model) {
@@ -505,8 +563,8 @@
                             return model instanceof BDD;
                         });
                         if (index !== -1) {
-                            // If bdd off but does exist
-                            // Remove model from scene
+                            // If BDD exists, update value
+                            // TODO - might be a problem if BDD removed and added
                             optionalUpdateQueue[index].maxTrailScale = properties.bddResponsiveness.value;
                         }
                     }
@@ -517,12 +575,19 @@
             // Adding audio handler as listener
             window.onload = function () {
                 window.wallpaperRegisterAudioListener(function (audioArray) {
-                    let total = 0;
 
-                    for (let i = 0; i < audioArray.length; i++) {
+                    // TODO - delete
+                    currentAudioArray = audioArray;
+
+                    total = 0;
+                    // Bass audio response
+                    for (let i = 0; i < 9; i++) {
+                        // Left ear
                         total += audioArray[i];
+                        // Right ear
+                        total += audioArray[i + 64];
                     }
-                    audioResponse = total / audioArray.length;
+                    audioBassResponse = total / 16;
                 });
             };
 
