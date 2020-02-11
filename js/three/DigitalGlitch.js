@@ -1,6 +1,5 @@
 /**
  * @author felixturner / http://airtight.cc/
- *
  * RGB Shift Shader
  * Shifts red and blue channels from center in opposite directions
  * Ported from http://kriss.cx/tom/2009/05/rgb-shift/
@@ -34,6 +33,7 @@ THREE.DigitalGlitch = {
 		"void main() {",
 		"	vUv = uv;",
 		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+		// Applies screen shake
 		"	float strength = 0.01;",
 		"	gl_Position.x += cos(seed_x * 10.) * strength;",
 		"	gl_Position.y += cos(seed_y * 15.) * strength;",

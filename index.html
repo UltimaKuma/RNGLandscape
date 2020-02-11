@@ -44,10 +44,13 @@
         var composer;
         var terrainModel;
         var sunModel;
+
         var glitchPass;
+        var glitchEnabled = true;
+        var glitchBassThreshold = 0.1;
+
         var audioBassResponse = 0;
-        // TODO - remove
-        var currentAudioArray;
+        var currentAudioArray = [];
 
         var optionalUpdateQueue = [];
 
@@ -411,9 +414,25 @@
                 model.setAudio(currentAudioArray);
                 model.update();
             });
-            // Update shader
-            if (audioBassResponse >= 0.015) {
-                glitchPass.enabled = true;
+            // Update shader depending on response
+            let total = 0;
+            for (let i = 0; i < 9; i++) {
+                // Left ear
+                total += currentAudioArray[i];
+                // Right ear
+                total += currentAudioArray[i + 64];
+            }
+            let audioBassResponse = total / 18;
+            // TODO - remove
+            audioBassResponse = Math.max(...currentAudioArray);
+
+            if (glitchEnabled) {
+                // Check if above glitchBassThreshold
+                if (audioBassResponse >= glitchBassThreshold) {
+                    glitchPass.enabled = true;
+                } else {
+                    glitchPass.enabled = false;
+                }
             } else {
                 glitchPass.enabled = false;
             }
@@ -424,12 +443,13 @@
             renderer.render(scene, camera);
         }
 
-        // Run game loop ie update render
+        // Run game loop ie update, render
         function gameLoop() {
             setTimeout(function () {
                 requestAnimationFrame(gameLoop);
             }, 1000 / fps);
             update();
+            // Render using the passes set up
             composer.render();
         }
 
@@ -470,8 +490,6 @@
             composer.addPass(new THREE.RenderPass(scene, camera));
             glitchPass = new THREE.GlitchPass(0);
             composer.addPass(glitchPass);
-            console.log(glitchPass);
-
 
             // Handler to resize window
             window.addEventListener("resize", function () {
@@ -568,6 +586,12 @@
                             optionalUpdateQueue[index].maxTrailScale = properties.bddResponsiveness.value;
                         }
                     }
+                    if (properties.glitchBassEffect) {
+                        glitchEnabled = properties.glitchBassEffect.value;
+                    }
+                    if (properties.glitchBassThreshold) {
+                        glitchBassThreshold = properties.glitchBassThreshold.value / 100;
+                    }
                 }
             };
 
@@ -575,19 +599,7 @@
             // Adding audio handler as listener
             window.onload = function () {
                 window.wallpaperRegisterAudioListener(function (audioArray) {
-
-                    // TODO - delete
                     currentAudioArray = audioArray;
-
-                    total = 0;
-                    // Bass audio response
-                    for (let i = 0; i < 9; i++) {
-                        // Left ear
-                        total += audioArray[i];
-                        // Right ear
-                        total += audioArray[i + 64];
-                    }
-                    audioBassResponse = total / 16;
                 });
             };
 
