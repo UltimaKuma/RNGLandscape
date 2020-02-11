@@ -22,7 +22,7 @@ THREE.DigitalGlitch = {
 		"seed_x": { value: 0.02 }, //-1,1
 		"seed_y": { value: 0.02 }, //-1,1
 		"distortion_x": { value: 0.5 },
-		"distortion_y": { value: 0.6 },
+		"distortion_y": { value: 0.5 },
 		"col_s": { value: 0.01 }
 	},
 
@@ -86,7 +86,7 @@ THREE.DigitalGlitch = {
 		"		vec4 cb = texture2D(tDiffuse, p - offset);",
 		"		gl_FragColor = vec4(cr.r, cga.g, cb.b, cga.a);",
 		//add noise
-		"		vec4 snow = 200.*amount*vec4(rand(vec2(xs * seed,ys * seed*50.))*0.2);",
+		"		vec4 snow = 128.*amount*vec4(rand(vec2(xs * seed,ys * seed*50.))*0.2);",
 		"		gl_FragColor = gl_FragColor+ snow;",
 		"	}",
 		"	else {",

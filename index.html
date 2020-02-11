@@ -25,7 +25,6 @@
 <body>
     <script src="js/three/three.min.js"></script>
     <script src="js/three/GLTFLoader.js"></script>
-    <script src="js/three/OrbitControls.js"></script>
     <script src="js/three/perlin.js"></script>
 
     <script src="js/three/EffectComposer.js"></script>
@@ -57,8 +56,6 @@
         // Affects display
         const fov = 75;
         const dispFog = true;
-        // TODO - remove
-        const orbitControls = false;
         var fps = 60;
 
         // Window init size
@@ -122,7 +119,9 @@
         }
 
         class Terrain {
-            constructor() {
+            constructor(parentScene) {
+                // Scene terrain is to be rendered to
+                this.parentScene = parentScene;
                 // Affects terrain
                 this.terrainWidth = 80;
                 this.terrainDepth = 100;
@@ -173,7 +172,7 @@
                     vertexColors: THREE.FaceColors,
                 });
                 this.mesh = new THREE.Mesh(this.geometry, this.terrainMaterial);
-                scene.add(this.mesh);
+                this.parentScene.add(this.mesh);
 
                 // Generating inverse
                 this.inverseTerrainMaterial = new THREE.MeshBasicMaterial({
@@ -187,7 +186,7 @@
                 this.mesh.add(this.inverseTerrainMesh);
             }
 
-            updateTerrain() {
+            update() {
                 this.mesh.position.z += this.terrainStep;
                 if (this.mesh.position.z >= 1) {
                     //reset etep and render next chunk
@@ -229,7 +228,9 @@
         }
 
         class Sun {
-            constructor() {
+            constructor(parentScene) {
+                // The scene where sun is added
+                this.parentScene = parentScene;
                 this.sunColor = 0xff2025;
                 // Affects properties of sun
                 this.maxSunScale = 5;
@@ -247,7 +248,7 @@
                 });
                 this.sunMesh = new THREE.Mesh(this.sunGeometry, this.sunMaterial);
                 this.sunMesh.position.set(40, 12, -12)
-                scene.add(this.sunMesh);
+                this.parentScene.add(this.sunMesh);
 
                 // Generating sun inverse
                 this.inverseSunMaterial = new THREE.MeshBasicMaterial({
@@ -284,7 +285,10 @@
         }
 
         class BDD {
-            constructor() {
+            constructor(parentScene, updateQueue) {
+                this.parentScene = parentScene;
+                // Update will be called on this queue when needed
+                this.updateQueue = updateQueue;
                 this.bddScene;
                 this.orbitRadius = 36;
                 // BDD rotation
@@ -311,7 +315,7 @@
                     function (gltf) {
                         console.log(gltf.scene);
                         this.bddScene = gltf.scene;
-                        scene.add(gltf.scene);
+                        this.parentScene.add(gltf.scene);
 
                         this.bddScene.traverse((o) => {
                             if (o.isMesh) {
@@ -320,7 +324,7 @@
                             if (o.parent.name == "bddInverse") o.material.side = THREE.FrontSide;
                         });
 
-                        optionalUpdateQueue.push(this);
+                        this.updateQueue.push(this);
                     }.bind(this),
 
                     // called while loading is progressing
@@ -343,7 +347,7 @@
                 this.trailLine = new THREE.Line(this.trailGeometry, new THREE.LineBasicMaterial({
                     color: 0xffffff,
                 }));
-                scene.add(this.trailLine);
+                this.parentScene.add(this.trailLine);
             }
 
             toToonMaterial(material) {
@@ -387,9 +391,10 @@
                 this.bddScene.rotation.set(timer * 7 + this.xRotationOffset, timer * 5 + this.yRotationOffset, timer * 3 + this.zRotationOffset);
             }
 
-            remove() {
-                scene.remove(this.bddScene);
-                scene.remove(this.trailLine);
+            remove(index) {
+                this.parentScene.remove(this.bddScene);
+                this.parentScene.remove(this.trailLine);
+                optionalUpdateQueue.splice(index);
             }
         }
 
@@ -405,8 +410,8 @@
 
         // Game logic
         function update() {
-            terrainModel.updateTerrain();
-            // TODO - Update audio response
+            terrainModel.update();
+            // Buh
             sunModel.setAudio(currentAudioArray);
             sunModel.update();
             // Optional objects updated
@@ -414,19 +419,11 @@
                 model.setAudio(currentAudioArray);
                 model.update();
             });
-            // Update shader depending on response
-            let total = 0;
-            for (let i = 0; i < 9; i++) {
-                // Left ear
-                total += currentAudioArray[i];
-                // Right ear
-                total += currentAudioArray[i + 64];
-            }
-            let audioBassResponse = total / 18;
-            // TODO - remove
-            audioBassResponse = Math.max(...currentAudioArray);
 
+            // Check if enabled 
             if (glitchEnabled) {
+                // Update shader depending on response
+                let audioBassResponse = Math.max(...currentAudioArray);
                 // Check if above glitchBassThreshold
                 if (audioBassResponse >= glitchBassThreshold) {
                     glitchPass.enabled = true;
@@ -457,8 +454,8 @@
             scene = new THREE.Scene();
 
             // Initialising mandatory components of scene
-            terrainModel = new Terrain();
-            sunModel = new Sun();
+            terrainModel = new Terrain(scene);
+            sunModel = new Sun(scene);
 
             // Adding fog to scene
             if (dispFog) {
@@ -488,7 +485,7 @@
             // Post
             composer = new THREE.EffectComposer(renderer);
             composer.addPass(new THREE.RenderPass(scene, camera));
-            glitchPass = new THREE.GlitchPass(0);
+            glitchPass = new THREE.GlitchPass();
             composer.addPass(glitchPass);
 
             // Handler to resize window
@@ -499,14 +496,6 @@
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
             });
-
-            // Orbit controls
-            if (orbitControls) {
-                var controls = new THREE.OrbitControls(camera, renderer.domElement);
-                camera.lookAt(new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0));
-                controls.target = new THREE.Vector3(terrainModel.terrainWidth / 2, 0, 0);
-                camera.updateProjectionMatrix();
-            }
 
             // WallpaperEngine properties handler
             window.wallpaperPropertyListener = {
@@ -567,12 +556,11 @@
                         if (properties.bdd.value && index === -1) {
                             // If bdd on but doesnt exist
                             // Call constructor, which will add itself to update queue
-                            new BDD();
+                            new BDD(scene, optionalUpdateQueue);
                         } else if (!properties.bdd.value && index !== -1) {
                             // If bdd off but does exist
                             // Remove model from scene
-                            optionalUpdateQueue[index].remove();
-                            optionalUpdateQueue.splice(index);
+                            optionalUpdateQueue[index].remove(index);
                         }
                     }
                     if (properties.bddResponsiveness) {
@@ -582,7 +570,7 @@
                         });
                         if (index !== -1) {
                             // If BDD exists, update value
-                            // TODO - might be a problem if BDD removed and added
+                            // TODO - might be a problem if BDD removed and added FAF
                             optionalUpdateQueue[index].maxTrailScale = properties.bddResponsiveness.value;
                         }
                     }
@@ -594,7 +582,6 @@
                     }
                 }
             };
-
 
             // Adding audio handler as listener
             window.onload = function () {
